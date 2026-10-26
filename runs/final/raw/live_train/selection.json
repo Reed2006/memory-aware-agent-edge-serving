@@ -1,0 +1,19 @@
+{
+  "split": "train",
+  "seed": 291,
+  "task_ids": [
+    "93",
+    "99",
+    "14",
+    "80",
+    "107",
+    "95",
+    "20",
+    "50",
+    "35",
+    "48"
+  ],
+  "max_steps": 40,
+  "user_model": "deepseek-flash",
+  "evaluation": "ENV only (programmatic database and environment assertions)"
+}

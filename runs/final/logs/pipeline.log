@@ -1,0 +1,558 @@
+[2026-10-26 01:42:01] === pipeline start, deadline 2026-10-26 10:42:01, commit b51b99e
+No server recorded in .server.json
+[2026-10-26 01:42:01] server --parallel 2 --ctx-size 24576
+llama-server ready, PID 56857 {"parallel": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0}
+Now drawing from 'Battery Power'
+[2026-10-26 01:42:03] capture test 20
+already captured 79
+already captured 90
+already captured 26
+already captured 65
+already captured 97
+already captured 111
+already captured 32
+already captured 53
+{"task_id": "42", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 91.81826795800589, "tool_events": [{"name": "find_user_id_by_name_zip", "elapsed_s": 0.00012179207988083363, "error": false}, {"name": "get_user_details", "elapsed_s": 0.0011017080396413803, "error": false}, {"name": "modify_user_address", "elapsed_s": 0.00013566692359745502, "error": false}, {"name": "get_order_details", "elapsed_s": 0.00018850015476346016, "error": false}, {"name": "modify_pending_order_items", "elapsed_s": 6.649992428719997e-05, "error": true}, {"name": "get_product_details", "elapsed_s": 0.00021041720174252987, "error": false}, {"name": "modify_pending_order_items", "elapsed_s": 0.00021541700698435307, "error": false}, {"name": "modify_user_address", "elapsed_s": 0.00010024989023804665, "error": false}, {"name": "modify_pending_order_items", "elapsed_s": 1.8208986148238182e-05, "error": true}, {"name": "modify_pending_order_items", "elapsed_s": 7.966696284711361e-05, "error": false}]} agent_calls= 15
+{"task_id": "33", "split": "test", "reward_basis": ["RewardType.DB"], "status": "ok", "env_reward": 0.0, "elapsed_s": 12.513174333842471, "tool_events": [{"name": "find_user_id_by_email", "elapsed_s": 0.0001534998882561922, "error": true}, {"name": "find_user_id_by_name_zip", "elapsed_s": 0.00027329218573868275, "error": true}, {"name": "get_order_details", "elapsed_s": 3.258301876485348e-05, "error": true}]} agent_calls= 4
+{"task_id": "55", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 29.39728375012055, "tool_events": [{"name": "find_user_id_by_name_zip", "elapsed_s": 0.00017629098147153854, "error": true}, {"name": "find_user_id_by_email", "elapsed_s": 0.00013762502931058407, "error": true}, {"name": "find_user_id_by_email", "elapsed_s": 8.999998681247234e-05, "error": false}, {"name": "get_user_details", "elapsed_s": 0.00012970785610377789, "error": false}, {"name": "get_order_details", "elapsed_s": 2.7166912332177162e-05, "error": true}]} agent_calls= 8
+{"task_id": "70", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 7.1112236669287086, "tool_events": [{"name": "transfer_to_human_agents", "elapsed_s": 2.0750099793076515e-05, "error": false}]} agent_calls= 2
+{"task_id": "71", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 25.51997849997133, "tool_events": [{"name": "find_user_id_by_name_zip", "elapsed_s": 0.000358042074367404, "error": true}, {"name": "find_user_id_by_name_zip", "elapsed_s": 0.00032670912332832813, "error": true}]} agent_calls= 6
+{"task_id": "61", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 52.625865292036906, "tool_events": [{"name": "find_user_id_by_name_zip", "elapsed_s": 0.00013124989345669746, "error": false}, {"name": "get_order_details", "elapsed_s": 5.262484773993492e-05, "error": true}, {"name": "get_user_details", "elapsed_s": 9.233411401510239e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 4.2208004742860794e-05, "error": true}, {"name": "get_order_details", "elapsed_s": 0.00013458309695124626, "error": false}, {"name": "get_order_details", "elapsed_s": 8.341716602444649e-05, "error": false}, {"name": "transfer_to_human_agents", "elapsed_s": 9.52079426497221e-05, "error": false}]} agent_calls= 13
+{"task_id": "74", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 53.53919499996118, "tool_events": [{"name": "find_user_id_by_name_zip", "elapsed_s": 0.00025637494400143623, "error": false}, {"name": "transfer_to_human_agents", "elapsed_s": 3.887503407895565e-05, "error": false}]} agent_calls= 8
+{"task_id": "56", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 89.8064186249394, "tool_events": [{"name": "find_user_id_by_email", "elapsed_s": 0.0002541251014918089, "error": true}, {"name": "find_user_id_by_name_zip", "elapsed_s": 0.00013687508180737495, "error": false}, {"name": "get_user_details", "elapsed_s": 0.00015045912005007267, "error": false}, {"name": "get_order_details", "elapsed_s": 0.00018274993635714054, "error": false}, {"name": "get_order_details", "elapsed_s": 0.0001474169548600912, "error": false}, {"name": "get_order_details", "elapsed_s": 7.904204539954662e-05, "error": false}, {"name": "cancel_pending_order", "elapsed_s": 0.0001563748810440302, "error": false}, {"name": "modify_pending_order_payment", "elapsed_s": 4.695798270404339e-05, "error": true}, {"name": "cancel_pending_order", "elapsed_s": 9.66670922935009e-05, "error": false}, {"name": "modify_pending_order_payment", "elapsed_s": 1.2124888598918915e-05, "error": true}]} agent_calls= 14
+{"task_id": "100", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 10.463118415791541, "tool_events": [{"name": "transfer_to_human_agents", "elapsed_s": 4.433398135006428e-05, "error": false}]} agent_calls= 3
+{"task_id": "38", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 8.702095542103052, "tool_events": [{"name": "modify_pending_order_payment", "elapsed_s": 4.779198206961155e-05, "error": true}, {"name": "find_user_id_by_email", "elapsed_s": 0.0002298750914633274, "error": true}, {"name": "find_user_id_by_name_zip", "elapsed_s": 0.00015849992632865906, "error": true}]} agent_calls= 4
+{"task_id": "86", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 57.155152375111356, "tool_events": [{"name": "find_user_id_by_email", "elapsed_s": 0.00024562515318393707, "error": true}, {"name": "find_user_id_by_name_zip", "elapsed_s": 0.0001506658736616373, "error": true}, {"name": "find_user_id_by_email", "elapsed_s": 0.00017954199574887753, "error": false}, {"name": "get_user_details", "elapsed_s": 0.0001272079534828663, "error": false}, {"name": "get_order_details", "elapsed_s": 0.00014512497000396252, "error": false}, {"name": "get_order_details", "elapsed_s": 8.124997839331627e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 7.524993270635605e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 7.562502287328243e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 8.095917291939259e-05, "error": false}, {"name": "get_product_details", "elapsed_s": 0.0001307909842580557, "error": false}, {"name": "exchange_delivered_order_items", "elapsed_s": 2.637505531311035e-05, "error": true}]} agent_calls= 15
+{"task_id": "17", "split": "test", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 14.91817754204385, "tool_events": [{"name": "modify_pending_order_address", "elapsed_s": 0.00020666583441197872, "error": false}, {"name": "modify_pending_order_address", "elapsed_s": 9.741587564349174e-05, "error": false}]} agent_calls= 3
+[2026-10-26 01:49:37] capture train 10
+already captured 93
+already captured 99
+{"task_id": "14", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 64.02718070917763, "tool_events": [{"name": "find_user_id_by_email", "elapsed_s": 5.212496034801006e-05, "error": false}, {"name": "get_user_details", "elapsed_s": 0.00016291695646941662, "error": false}, {"name": "cancel_pending_order", "elapsed_s": 3.883405588567257e-05, "error": true}, {"name": "cancel_pending_order", "elapsed_s": 1.4874851331114769e-05, "error": true}, {"name": "get_order_details", "elapsed_s": 0.000194125110283494, "error": false}, {"name": "get_order_details", "elapsed_s": 6.550014950335026e-05, "error": false}, {"name": "return_delivered_order_items", "elapsed_s": 0.00020545907318592072, "error": false}, {"name": "return_delivered_order_items", "elapsed_s": 6.200000643730164e-05, "error": false}, {"name": "cancel_pending_order", "elapsed_s": 2.787495031952858e-05, "error": true}, {"name": "cancel_pending_order", "elapsed_s": 9.58307646214962e-06, "error": true}, {"name": "return_delivered_order_items", "elapsed_s": 9.133410640060902e-05, "error": false}, {"name": "return_delivered_order_items", "elapsed_s": 4.14170790463686e-05, "error": false}]} agent_calls= 12
+{"task_id": "80", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 1.0, "elapsed_s": 96.97659479198046, "tool_events": [{"name": "get_order_details", "elapsed_s": 0.00015195785090327263, "error": false}, {"name": "get_product_details", "elapsed_s": 0.00017695804126560688, "error": false}, {"name": "exchange_delivered_order_items", "elapsed_s": 0.00012812484055757523, "error": false}, {"name": "transfer_to_human_agents", "elapsed_s": 3.9833830669522285e-05, "error": false}, {"name": "exchange_delivered_order_items", "elapsed_s": 0.00010695820674300194, "error": false}]} agent_calls= 8
+{"task_id": "107", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 73.2177908339072, "tool_events": [{"name": "transfer_to_human_agents", "elapsed_s": 3.766687586903572e-05, "error": false}, {"name": "find_user_id_by_name_zip", "elapsed_s": 0.0002181660383939743, "error": false}, {"name": "get_user_details", "elapsed_s": 0.00012804102152585983, "error": false}, {"name": "get_order_details", "elapsed_s": 0.00013770908117294312, "error": false}, {"name": "exchange_delivered_order_items", "elapsed_s": 9.358301758766174e-05, "error": false}, {"name": "get_user_details", "elapsed_s": 0.00012229220010340214, "error": false}, {"name": "get_order_details", "elapsed_s": 8.712499402463436e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 0.00010133301839232445, "error": false}, {"name": "exchange_delivered_order_items", "elapsed_s": 0.0001140411477535963, "error": false}, {"name": "exchange_delivered_order_items", "elapsed_s": 9.358394891023636e-05, "error": false}, {"name": "exchange_delivered_order_items", "elapsed_s": 6.43748790025711e-05, "error": false}]} agent_calls= 14
+{"task_id": "95", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 5.056361707858741, "tool_events": [{"name": "transfer_to_human_agents", "elapsed_s": 4.39169816672802e-05, "error": false}]} agent_calls= 2
+{"task_id": "20", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 118.3425388331525, "tool_events": [{"name": "find_user_id_by_name_zip", "elapsed_s": 0.00018233293667435646, "error": false}, {"name": "get_user_details", "elapsed_s": 7.158308289945126e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 0.00014170794747769833, "error": false}, {"name": "modify_pending_order_items", "elapsed_s": 6.362493149936199e-05, "error": true}, {"name": "get_product_details", "elapsed_s": 7.420778274536133e-05, "error": false}, {"name": "modify_pending_order_items", "elapsed_s": 0.00022537494078278542, "error": false}, {"name": "get_order_details", "elapsed_s": 0.00015637511387467384, "error": false}, {"name": "get_order_details", "elapsed_s": 0.0001538749784231186, "error": false}, {"name": "modify_pending_order_items", "elapsed_s": 2.9957853257656097e-05, "error": true}, {"name": "modify_pending_order_items", "elapsed_s": 9.3833077698946e-05, "error": false}]} agent_calls= 18
+{"task_id": "50", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 1.0, "elapsed_s": 62.56621237494983, "tool_events": [{"name": "find_user_id_by_name_zip", "elapsed_s": 5.5791810154914856e-05, "error": false}, {"name": "get_user_details", "elapsed_s": 0.0001202921848744154, "error": false}, {"name": "cancel_pending_order", "elapsed_s": 4.9416907131671906e-05, "error": true}, {"name": "get_order_details", "elapsed_s": 0.00016391696408391, "error": false}, {"name": "modify_pending_order_items", "elapsed_s": 4.758313298225403e-05, "error": true}, {"name": "transfer_to_human_agents", "elapsed_s": 3.5084085538983345e-05, "error": false}, {"name": "cancel_pending_order", "elapsed_s": 2.795807085931301e-05, "error": true}, {"name": "modify_pending_order_items", "elapsed_s": 1.1292053386569023e-05, "error": true}]} agent_calls= 13
+{"task_id": "35", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 11.478965291986242, "tool_events": [{"name": "return_delivered_order_items", "elapsed_s": 4.933401942253113e-05, "error": true}, {"name": "find_user_id_by_email", "elapsed_s": 0.0002143331803381443, "error": true}, {"name": "find_user_id_by_name_zip", "elapsed_s": 0.00016037514433264732, "error": true}]} agent_calls= 4
+{"task_id": "48", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 1.0, "elapsed_s": 61.71499404194765, "tool_events": [{"name": "get_order_details", "elapsed_s": 4.850002005696297e-05, "error": true}, {"name": "find_user_id_by_name_zip", "elapsed_s": 6.612506695091724e-05, "error": false}, {"name": "get_user_details", "elapsed_s": 0.00012366706505417824, "error": false}, {"name": "get_order_details", "elapsed_s": 6.508314982056618e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 7.558404467999935e-05, "error": false}, {"name": "get_order_details", "elapsed_s": 9.187520481646061e-05, "error": false}, {"name": "return_delivered_order_items", "elapsed_s": 0.00011150003410875797, "error": false}, {"name": "return_delivered_order_items", "elapsed_s": 0.00010462501086294651, "error": false}]} agent_calls= 12
+workload_eval.json 20 tasks, 205 steps
+workload_dev.json 10 tasks, 92 steps
+[2026-10-26 01:57:53] bench micro --lengths 1024,4096,8192 --outputs 64,512 --k 1,2 --repeats 2
+micro 1 / 24 micro-L8192-O64-K2-R1
+micro 2 / 24 micro-L1024-O512-K2-R1
+micro 3 / 24 micro-L1024-O512-K2-R0
+micro 4 / 24 micro-L4096-O64-K1-R0
+micro 5 / 24 micro-L1024-O64-K1-R1
+micro 6 / 24 micro-L1024-O64-K1-R0
+micro 7 / 24 micro-L4096-O64-K2-R0
+micro 8 / 24 micro-L1024-O512-K1-R1
+micro 9 / 24 micro-L4096-O512-K1-R1
+micro 10 / 24 micro-L8192-O64-K2-R0
+micro 11 / 24 micro-L8192-O512-K2-R1
+micro 12 / 24 micro-L4096-O512-K2-R0
+micro 13 / 24 micro-L1024-O512-K1-R0
+micro 14 / 24 micro-L4096-O64-K1-R1
+micro 15 / 24 micro-L4096-O64-K2-R1
+micro 16 / 24 micro-L1024-O64-K2-R1
+micro 17 / 24 micro-L8192-O512-K2-R0
+micro 18 / 24 micro-L8192-O64-K1-R1
+micro 19 / 24 micro-L4096-O512-K1-R0
+micro 20 / 24 micro-L1024-O64-K2-R0
+micro 21 / 24 micro-L8192-O64-K1-R0
+micro 22 / 24 micro-L8192-O512-K1-R0
+micro 23 / 24 micro-L4096-O512-K2-R1
+micro 24 / 24 micro-L8192-O512-K1-R1
+[2026-10-26 02:18:09] bench cache --lengths 2048,8192 --repeats 2
+cache-L8192-R1-erase
+cache-L2048-R1-save_restore
+cache-L2048-R0-retain
+cache-L8192-R0-retain
+cache-L8192-R0-erase
+cache-L2048-R0-erase
+cache-L8192-R1-wait
+cache-L2048-R0-save_restore
+cache-L2048-R1-retain
+cache-L2048-R1-erase
+cache-L8192-R0-wait
+cache-L8192-R1-overwrite
+cache-L8192-R0-save_restore
+cache-L8192-R1-save_restore
+cache-L2048-R0-wait
+cache-L2048-R1-wait
+cache-L2048-R0-overwrite
+cache-L8192-R1-retain
+cache-L8192-R0-overwrite
+cache-L2048-R1-overwrite
+Restore check: 64 generated tokens identical; serialized state equality: True
+Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
+[2026-10-26 02:36:02] === round 0 (full)
+Stopped llama-server PID 56857
+[2026-10-26 02:36:02] server --parallel 2 --ctx-size 24576
+llama-server ready, PID 57787 {"parallel": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0}
+Now drawing from 'AC Power'
+[2026-10-26 02:36:03] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 2 --jobs-active 0
+{"label": "macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:1-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 585.1318837080617, "jobs_per_minute": 0.820327883960405}
+[2026-10-26 02:45:49] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 1 --jobs-active 1
+{"label": "macro-P2-C24576-K1-J1-lognormal:2:1-poisson:1-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 1, "j": 1, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 578.3645017500967, "jobs_per_minute": 0.8299264539015595}
+[2026-10-26 02:55:28] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 1 --jobs-active 0
+{"label": "macro-P2-C24576-K1-Jall-lognormal:2:1-poisson:1-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 1, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 947.5541018338408, "jobs_per_minute": 0.5065673812936232}
+[2026-10-26 03:11:16] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 2 --jobs-active 2
+{"label": "macro-P2-C24576-K2-J2-lognormal:2:1-poisson:1-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 2, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 569.1269037919119, "jobs_per_minute": 0.8433971348075664}
+[2026-10-26 03:20:46] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --arrival poisson:1 --gap zero --k 2
+{"label": "macro-P2-C24576-K2-Jall-zero-poisson:1-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 0, "gap_mode": "zero", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 696.1076776250266, "jobs_per_minute": 0.6895484928964716}
+[2026-10-26 03:32:23] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --arrival poisson:1 --gap fixed:15 --k 2
+{"label": "macro-P2-C24576-K2-Jall-fixed:15-poisson:1-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 0, "gap_mode": "fixed:15", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 961.5308695831336, "jobs_per_minute": 0.4992039415313846}
+[2026-10-26 03:48:25] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --gap lognormal:2:1 --arrival poisson:0.5 --k 2
+{"label": "macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:0.5-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:0.5", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 1099.3924629578833, "jobs_per_minute": 0.4366047759765189}
+[2026-10-26 04:06:45] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --repeat-start 0 --gap lognormal:2:1 --arrival poisson:2 --k 2
+{"label": "macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:2-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:2", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 824.0707504998427, "jobs_per_minute": 0.5824742592900604}
+Stopped llama-server PID 57787
+[2026-10-26 04:20:30] server --parallel 1 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:30] SERVER START FAILED --parallel 1 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:30] server --parallel 4 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:31] SERVER START FAILED --parallel 4 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:31] server --parallel 4 --ctx-size 24576 --kv-unified
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:31] SERVER START FAILED --parallel 4 --ctx-size 24576 --kv-unified
+No server recorded in .server.json
+[2026-10-26 04:20:31] server --parallel 2 --ctx-size 24576 --cache-ram 3072
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:31] SERVER START FAILED --parallel 2 --ctx-size 24576 --cache-ram 3072
+Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
+[2026-10-26 04:20:35] === round 1 (full)
+No server recorded in .server.json
+[2026-10-26 04:20:35] server --parallel 2 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:35] SERVER START FAILED --parallel 2 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:35] server --parallel 1 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:35] SERVER START FAILED --parallel 1 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:35] server --parallel 4 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:35] SERVER START FAILED --parallel 4 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:36] server --parallel 4 --ctx-size 24576 --kv-unified
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:36] SERVER START FAILED --parallel 4 --ctx-size 24576 --kv-unified
+No server recorded in .server.json
+[2026-10-26 04:20:36] server --parallel 2 --ctx-size 24576 --cache-ram 3072
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:36] SERVER START FAILED --parallel 2 --ctx-size 24576 --cache-ram 3072
+Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
+No server recorded in .server.json
+[2026-10-26 04:20:40] server --parallel 2 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:40] SERVER START FAILED --parallel 2 --ctx-size 24576
+[2026-10-26 04:20:40] === round 2 (core)
+No server recorded in .server.json
+[2026-10-26 04:20:40] server --parallel 2 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:40] SERVER START FAILED --parallel 2 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:40] server --parallel 1 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:40] SERVER START FAILED --parallel 1 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:40] server --parallel 4 --ctx-size 24576
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:40] SERVER START FAILED --parallel 4 --ctx-size 24576
+No server recorded in .server.json
+[2026-10-26 04:20:40] server --parallel 4 --ctx-size 24576 --kv-unified
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:40] SERVER START FAILED --parallel 4 --ctx-size 24576 --kv-unified
+No server recorded in .server.json
+[2026-10-26 04:20:41] server --parallel 2 --ctx-size 24576 --cache-ram 3072
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:41] SERVER START FAILED --parallel 2 --ctx-size 24576 --cache-ram 3072
+Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
+No server recorded in .server.json
+[2026-10-26 04:20:45] server --parallel 4 --ctx-size 36864
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:45] SERVER START FAILED --parallel 4 --ctx-size 36864
+No server recorded in .server.json
+[2026-10-26 04:20:45] server --parallel 4 --ctx-size 36864
+Traceback (most recent call last):
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 26, in assert_port_free
+    reservation.bind(('127.0.0.1', port))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 132, in main
+    stop() if args.action == 'stop' else start(args)
+                                         ~~~~~^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 78, in start
+    assert_port_free(args.port)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase1/server.py", line 28, in assert_port_free
+    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+RuntimeError: Local port 18080 is already in use; identify its owner before starting another server.
+[2026-10-26 04:20:45] SERVER START FAILED --parallel 4 --ctx-size 36864
+No server recorded in .server.json
+Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
+[2026-10-26 04:20:49] === pipeline done

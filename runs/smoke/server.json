@@ -1,5 +1,5 @@
 {
-  "pid": 52718,
+  "pid": 63148,
   "command": [
     "llama-server",
     "-m",
@@ -11,7 +11,7 @@
     "--alias",
     "phase1-qwen3-4b",
     "--parallel",
-    "2",
+    "1",
     "--ctx-size",
     "24576",
     "--no-kv-unified",
@@ -43,14 +43,14 @@
     "on",
     "--log-timestamps"
   ],
-  "started_unix": 1793003155.045524,
+  "started_unix": 1793028620.6588218,
   "port": 18080,
-  "parallel": 2,
+  "parallel": 1,
   "ctx_size": 24576,
-  "ctx_per_slot": 12288,
+  "ctx_per_slot": 24576,
   "kv_unified": false,
   "cache_ram_mib": 0,
   "cpu": false,
   "slot_save_path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/smoke/cache",
-  "log": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/smoke/logs/server-P2-C24576-1793003155.log"
+  "log": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/smoke/logs/server-P1-C24576-1793028620.log"
 }

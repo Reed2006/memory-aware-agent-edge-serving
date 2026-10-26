@@ -270,10 +270,17 @@ async def macro(client, results, args, server):
     cases = list(itertools.product(args.k, args.jobs_active, args.gap, args.arrival,
                                    range(args.repeat_start, args.repeat_start + args.repeats)))
     random.Random(1025).shuffle(cases)
+    done = set()
+    if args.skip_done and (results / 'raw/macro_runs.jsonl').exists():
+        done = {json.loads(s)['label'] for s in (results / 'raw/macro_runs.jsonl').read_text().splitlines() if s}
     for k, j, gap_spec, arrival_spec, repeat in cases:
-        await client.erase(P)
         suffix = f'-S{args.steps_limit}' if args.steps_limit else ''
-        label = f'macro-P{P}-C{C}-K{k}-J{j or "all"}-{gap_spec}-{arrival_spec}-R{repeat}{suffix}'
+        mode = ('u' if server['kv_unified'] else '') + (f'-RAM{server["cache_ram_mib"]}' if server['cache_ram_mib'] else '')
+        label = f'macro-P{P}{mode}-C{C}-K{k}-J{j or "all"}-{gap_spec}-{arrival_spec}-R{repeat}{suffix}'
+        if label in done:
+            print('skip completed', label, flush=True)
+            continue
+        await client.erase(P)
         config = dict(label=label, P=P, ctx_size=C, ctx_per_slot=server['ctx_per_slot'],
                       kv_unified=server['kv_unified'], cache_ram_mib=server['cache_ram_mib'],
                       k=k, j=j, gap_mode=gap_spec, arrival=arrival_spec, repeat=repeat,
@@ -373,6 +380,7 @@ def main():
                         help='Deprecated alias for --gap')
     parser.add_argument('--arrival', type=lambda s: s.split(','), default=['batch'])
     parser.add_argument('--steps-limit', type=int, default=0, help='Smoke tests only')
+    parser.add_argument('--skip-done', action='store_true', help='Skip macro runs whose label is already logged')
     args = parser.parse_args()
     if args.gap_mode:
         args.gap = ['recorded', 'zero'] if args.gap_mode == 'both' else [args.gap_mode]

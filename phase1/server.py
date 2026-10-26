@@ -20,12 +20,20 @@ import psutil
 POINTER = Path('.server.json')
 
 
-def assert_port_free(port: int) -> None:
-    with socket.socket() as reservation:
-        try:
-            reservation.bind(('127.0.0.1', port))
-        except OSError as error:
-            raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+def assert_port_free(port: int, wait_s: float = 0) -> None:
+    """Reject a port with a live listener. SO_REUSEADDR ignores TIME_WAIT left by the
+    previous server's closed connections, which would otherwise block restarts for ~30 s."""
+    deadline = time.time() + wait_s
+    while True:
+        with socket.socket() as reservation:
+            reservation.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                reservation.bind(('127.0.0.1', port))
+                return
+            except OSError as error:
+                if time.time() >= deadline:
+                    raise RuntimeError(f'Local port {port} is already in use; identify its owner before starting another server.') from error
+        time.sleep(1)
 
 
 def build_command(model: Path, args, slot_save_path: Path) -> list[str]:
@@ -75,7 +83,7 @@ def start(args) -> None:
     model = root / 'models/Qwen3-4B-Q4_K_M.gguf'
     if not model.exists():
         raise SystemExit('Download the model recorded in results/manifest.json first.')
-    assert_port_free(args.port)
+    assert_port_free(args.port, wait_s=60)
     results = root / args.results_dir
     log_dir, slot_save_path = results / 'logs', results / 'cache'
     log_dir.mkdir(parents=True, exist_ok=True)

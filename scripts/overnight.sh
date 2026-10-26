@@ -2,6 +2,7 @@
 # Full Phase 1 pipeline: live capture -> micro -> cache -> macro rounds -> dev sweep -> report.
 # Runs sequentially (never two experiments on the server at once). Each experiment is
 # skipped, not truncated, once HOURS have elapsed; the report is regenerated after every round.
+# Resumable: captures, micro/cache and logged macro runs are skipped on re-run.
 # Usage: nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
 set -u
 cd "$(dirname "$0")/.."
@@ -28,6 +29,7 @@ bench() {  # bench <results-dir> <bench args...>
   if ! in_time; then log "SKIP (deadline) $*"; return; fi
   log "bench $*"
   $PY -m phase1.bench "$@" --results-dir "$dir" --timeout 600 || log "BENCH FAILED $*"
+  sleep 2
 }
 
 report() {
@@ -48,7 +50,7 @@ $PY -m phase1.capture --split test --count 20 --max-steps 40 --results-dir "$OUT
 log "capture train 10"
 $PY -m phase1.capture --split train --count 10 --max-steps 40 --results-dir "$OUT" || log "CAPTURE TRAIN FAILED"
 
-$PY - "$OUT" <<'EOF'
+[ -s "$OUT/workload_eval.json" ] || $PY - "$OUT" <<'EOF'
 import json, sys
 from pathlib import Path
 from phase1.bench import make_workload
@@ -60,13 +62,13 @@ for split, name in [('test', 'workload_eval.json'), ('train', 'workload_dev.json
 EOF
 
 # ---- 2. micro and cache (P=2, 24K: 12K per slot) ------------------------------------
-bench "$OUT" micro --lengths 1024,4096,8192 --outputs 64,512 --k 1,2 --repeats 2
-bench "$OUT" cache --lengths 2048,8192 --repeats 2
-in_time && { $PY -m phase1.check_restore --results-dir "$OUT" || log "RESTORE CHECK FAILED"; }
+[ -s "$OUT/raw/micro_requests.jsonl" ] || bench "$OUT" micro --lengths 1024,4096,8192 --outputs 64,512 --k 1,2 --repeats 2
+[ -s "$OUT/raw/cache.jsonl" ] || bench "$OUT" cache --lengths 2048,8192 --repeats 2
+if [ ! -s "$OUT/restore_validation.json" ] && in_time; then $PY -m phase1.check_restore --results-dir "$OUT" || log "RESTORE CHECK FAILED"; fi
 report
 
 # ---- 3. macro rounds on the eval workload ---------------------------------------------
-EVAL="macro --workload $OUT/workload_eval.json --num-jobs 8 --repeats 1"
+EVAL="macro --workload $OUT/workload_eval.json --num-jobs 8 --repeats 1 --skip-done"
 MAIN="--gap lognormal:2:1 --arrival poisson:1"
 
 round() {  # round <repeat index> <full|core>
@@ -97,7 +99,7 @@ round 1 full
 # ---- 4. dev workload sweep (input to Phase 2 baseline selection) ---------------------
 if in_time; then
   server --parallel 2 --ctx-size 24576 && \
-    bench "$DEV" macro --workload "$OUT/workload_dev.json" --num-jobs 8 --repeats 1 $MAIN --k 1,2 --jobs-active 0,2
+    bench "$DEV" macro --workload "$OUT/workload_dev.json" --num-jobs 8 --repeats 1 --skip-done $MAIN --k 1,2 --jobs-active 0,2
 fi
 
 # ---- 5. third repeat and a larger KV budget if time and memory allow -------------------

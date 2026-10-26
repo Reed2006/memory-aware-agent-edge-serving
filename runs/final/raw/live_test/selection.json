@@ -1,0 +1,29 @@
+{
+  "split": "test",
+  "seed": 291,
+  "task_ids": [
+    "79",
+    "90",
+    "26",
+    "65",
+    "97",
+    "111",
+    "32",
+    "53",
+    "42",
+    "33",
+    "55",
+    "70",
+    "71",
+    "61",
+    "74",
+    "56",
+    "100",
+    "38",
+    "86",
+    "17"
+  ],
+  "max_steps": 40,
+  "user_model": "deepseek-flash",
+  "evaluation": "ENV only (programmatic database and environment assertions)"
+}
