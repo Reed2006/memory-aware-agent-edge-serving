@@ -1,0 +1,11 @@
+API.md
+.env*
+.venv/
+__pycache__/
+.pytest_cache/
+.coverage
+models/
+third_party/
+results/cache/
+.DS_Store
+artifacts/

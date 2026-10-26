@@ -1,0 +1,8 @@
+Resolved 4 packages in 84ms
+Downloading scipy (19.5MiB)
+ Downloading scipy
+Prepared 3 packages in 894ms
+Installed 3 packages in 15ms
+ + audioop-lts==0.2.2
+ + pydub==0.25.1
+ + scipy==1.18.1

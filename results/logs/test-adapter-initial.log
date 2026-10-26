@@ -1,0 +1,16 @@
+
+==================================== ERRORS ====================================
+___________________ ERROR collecting tests/test_adapters.py ____________________
+ImportError while importing test module '/Users/air/Documents/26 Fall/CSE291A/PJ/tests/test_adapters.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_adapters.py:1: in <module>
+    from phase1.adapters import normalize_tool_message
+E   ModuleNotFoundError: No module named 'phase1.adapters'
+=========================== short test summary info ============================
+ERROR tests/test_adapters.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.05s

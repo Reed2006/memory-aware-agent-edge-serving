@@ -1,0 +1,2 @@
+{"task_id": "93", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 22.930323041975498} agent_calls= 2
+{"task_id": "99", "split": "train", "reward_basis": ["RewardType.DB", "RewardType.NL_ASSERTION"], "status": "ok", "env_reward": 0.0, "elapsed_s": 49.88834687508643} agent_calls= 20

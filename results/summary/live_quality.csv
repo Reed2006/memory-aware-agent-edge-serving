@@ -1,0 +1,9 @@
+task_id,status,env_reward,agent_calls,generated_tokens,max_prompt,normalization_count,tool_calls,tool_errors,termination,elapsed_s
+111,ok,0.0,20,1212,8522,0,4,0,max_steps,113.82612045784481
+26,ok,1.0,16,816,9302,0,9,0,user_stop,88.91248183418065
+32,ok,0.0,20,1030,8258,0,7,0,max_steps,98.33858991600573
+53,ok,0.0,10,837,6763,0,2,0,user_stop,72.59929595794529
+65,ok,1.0,12,912,6693,0,6,2,user_stop,70.08804458403029
+79,ok,0.0,15,1868,9677,0,6,3,too_many_errors,124.6558207499329
+90,ok,1.0,15,833,9340,0,8,0,user_stop,95.05954037490301
+97,ok,0.0,2,87,5035,0,1,0,user_stop,7.450546000152826

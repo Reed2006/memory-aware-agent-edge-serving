@@ -1,0 +1,22 @@
+{
+  "runtime_commit": "620d2225c",
+  "tau_commit": "fc0055dc4e0a316c3f83133267fbd6faaa770992",
+  "model": "Qwen3-4B-Q4_K_M.gguf",
+  "model_revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
+  "parallel_slots": 2,
+  "total_context": 24576,
+  "unified_kv": false,
+  "kv_type": "f16",
+  "ram_prompt_cache_mib": 0,
+  "request_concurrency": [1, 2],
+  "repeats": 3,
+  "micro_input_tokens": [512, 2048, 4096],
+  "micro_output_tokens": [64, 128],
+  "user_model": "deepseek-flash",
+  "evaluation_split": "test",
+  "task_selection_seed": 291,
+  "evaluation_tasks": 8,
+  "macro_pilot_tasks": 4,
+  "macro_gap_mode": "recorded",
+  "max_live_turns": 40
+}

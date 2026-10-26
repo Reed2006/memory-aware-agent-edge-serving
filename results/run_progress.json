@@ -1,0 +1,18 @@
+{
+  "status": "complete",
+  "completed_at": "2026-10-25T21:08:02-07:00",
+  "owned_server_pid": 61759,
+  "owned_server_status": "stopped",
+  "completed": [
+    "live_train_2",
+    "live_test_8",
+    "micro_12_configs_x3_54_requests",
+    "cache_10_conditions_x3",
+    "macro_6_batches_24_jobs_348_requests",
+    "restore_correctness",
+    "workload_audit",
+    "9_figures_png_pdf",
+    "14_tests_passed"
+  ],
+  "credential_handling": "Credentials remain local; package allowlist and actual-key scan exclude them."
+}

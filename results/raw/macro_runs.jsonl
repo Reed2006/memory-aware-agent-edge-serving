@@ -1,0 +1,6 @@
+{"label": "macro-K1-recorded-R2", "k": 1, "repeat": 2, "gap_mode": "recorded", "tasks": 4, "completed": 4, "makespan_s": 932.910485249944, "jobs_per_minute": 0.25725940890856164}
+{"label": "macro-K2-recorded-R2", "k": 2, "repeat": 2, "gap_mode": "recorded", "tasks": 4, "completed": 4, "makespan_s": 837.2568457499146, "jobs_per_minute": 0.286650388370413}
+{"label": "macro-K2-recorded-R0", "k": 2, "repeat": 0, "gap_mode": "recorded", "tasks": 4, "completed": 4, "makespan_s": 834.0677752499469, "jobs_per_minute": 0.2877464003786487}
+{"label": "macro-K2-recorded-R1", "k": 2, "repeat": 1, "gap_mode": "recorded", "tasks": 4, "completed": 4, "makespan_s": 845.7196309580468, "jobs_per_minute": 0.2837819901710495}
+{"label": "macro-K1-recorded-R0", "k": 1, "repeat": 0, "gap_mode": "recorded", "tasks": 4, "completed": 4, "makespan_s": 859.0560813331977, "jobs_per_minute": 0.2793764053535783}
+{"label": "macro-K1-recorded-R1", "k": 1, "repeat": 1, "gap_mode": "recorded", "tasks": 4, "completed": 4, "makespan_s": 894.3691117081326, "jobs_per_minute": 0.2683455822189903}
