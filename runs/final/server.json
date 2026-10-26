@@ -1,5 +1,5 @@
 {
-  "pid": 57787,
+  "pid": 63987,
   "command": [
     "llama-server",
     "-m",
@@ -43,7 +43,7 @@
     "on",
     "--log-timestamps"
   ],
-  "started_unix": 1793007362.724851,
+  "started_unix": 1793031294.092272,
   "port": 18080,
   "parallel": 2,
   "ctx_size": 24576,
@@ -52,5 +52,5 @@
   "cache_ram_mib": 0,
   "cpu": false,
   "slot_save_path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/cache",
-  "log": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/logs/server-P2-C24576-1793007362.log"
+  "log": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/logs/server-P2-C24576-1793031294.log"
 }

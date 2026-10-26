@@ -1,6 +1,6 @@
 # Phase 1 Report — Memory-Aware Agent Edge Serving (Option 1)
 
-_Generated 2026-10-26T04:20 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
+_Generated 2026-10-26T09:55 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
 
 ## 1. Question and baseline
 
@@ -18,8 +18,8 @@ The baseline is a FIFO queue with fixed concurrency K in front of one llama-serv
 | KV budget | --ctx-size tokens in total; partitioned per slot unless "u" (unified pool); f16 KV = 144 KiB/token |
 | Agent benchmark | τ²-bench v1.0.1 Retail (official tools, orchestrator, ENV evaluator) |
 | User simulator | DeepSeek V4 flash (`deepseek-flash`), live capture only; never called during timed replays |
-| Power during runs | Now drawing from 'AC Power' |
-| Code commit(s) | b51b99e1 |
+| Power during runs | Now drawing from 'AC Power'; Now drawing from 'Battery Power' |
+| Code commit(s) | 7a489316, b51b99e1 |
 
 
 ## 3. Workloads (micro → macro)
@@ -82,29 +82,43 @@ Restore correctness: after save → overwrite → restore, 64 greedy tokens iden
 
 | config | repeats | completed | tasks/min | P50 s | P95 s | wasted prefill | history hit | mean slowdown |
 |---|---|---|---|---|---|---|---|---|
-| P2·24K K1 J1 | 1 | 8/8 | 0.830 ± n/a | 135 | 152 | 0.0% | 100.0% | 3.61 |
-| P2·24K K1 J∞ | 1 | 8/8 | 0.507 ± n/a | 352 | 609 | 81.0% | 9.9% | 5.57 |
+| P1·24K K1 J∞ | 1 | 8/8 | 0.617 ± n/a | 255 | 394 | 80.7% | 13.6% | 3.70 |
+| P2·24K K1 J1 | 2 | 16/16 | 0.642 ± 0.265 | 130 | 201 | 0.0% | 100.0% | 6.71 |
+| P2·24K K1 J∞ | 1 | 8/8 | 0.507 ± n/a | 352 | 609 | 81.0% | 9.9% | 5.52 |
 | P2·24K K2 J2 | 1 | 8/8 | 0.843 ± n/a | 114 | 182 | 22.6% | 96.3% | 2.93 |
-| P2·24K K2 J∞ | 1 | 8/8 | 0.820 ± n/a | 158 | 292 | 47.5% | 69.1% | 3.02 |
+| P2·24K K2 J∞ | 2 | 16/16 | 0.654 ± 0.235 | 104 | 246 | 28.8% | 83.0% | 2.16 |
+| P2·24K+RAM3G K2 J∞ | 1 | 8/8 | 0.661 ± n/a | 274 | 434 | 75.3% | 32.1% | 4.88 |
+| P4·24K K4 J∞ | 1 | 3/8 | 0.346 ± n/a | 30 | 31 | 0.0% | 100.0% | 1.74 |
+| P4u·24K K4 J∞ | 1 | 4/8 | 0.408 ± n/a | 77 | 120 | 16.9% | 98.3% | 2.10 |
 
 
 Highest completed-task throughput on the eval workload: **P2·24K K2 J2**. (Phase 2 must re-select the best fixed baseline on the dev workload; this ranking is descriptive.)
+
+Failures (9 tasks across all runs) are kept in the denominators. Reasons seen: Context size has been exceeded.; request (N tokens) exceeds the available context size (N tokens), try increasing it.
 
 Mean time per completed task (F5):
 
 | config | admission wait | FIFO wait | model round trip | tool delay | total |
 |---|---|---|---|---|---|
-| P2·24K K1 J1 | 57 | 0 | 36 | 33 | 125 |
+| P1·24K K1 J∞ | 0 | 110 | 91 | 33 | 234 |
+| P2·24K K1 J1 | 58 | 0 | 36 | 35 | 128 |
 | P2·24K K1 J∞ | 0 | 205 | 114 | 33 | 352 |
 | P2·24K K2 J2 | 19 | 0 | 61 | 33 | 113 |
-| P2·24K K2 J∞ | 0 | 36 | 106 | 33 | 175 |
+| P2·24K K2 J∞ | 0 | 18 | 77 | 35 | 130 |
+| P2·24K+RAM3G K2 J∞ | 0 | 87 | 159 | 33 | 279 |
+| P4·24K K4 J∞ | 0 | 0 | 21 | 10 | 31 |
+| P4u·24K K4 J∞ | 0 | 0 | 55 | 25 | 80 |
 
 
 ### 4.4 Memory (F7)
 
 | server | theoretical KV GiB | peak server RSS GiB | min system available GiB |
 |---|---|---|---|
-| P2·24K | 3.38 | 3.61 | 2.41 |
+| P1·24K | 3.38 | 3.57 | 1.86 |
+| P2·24K | 3.38 | 3.61 | 2.10 |
+| P2·24K+RAM3G | 3.38 | 3.59 | 2.20 |
+| P4·24K | 3.38 | 3.57 | 2.18 |
+| P4u·24K | 3.38 | 3.61 | 2.16 |
 
 
 llama-server preallocates the whole KV pool at start, so resident memory is set by the budget, not by load; "too much work" therefore shows up as slot contention (evicted histories) or as hard context overflows, not as growing RSS.
@@ -113,33 +127,37 @@ llama-server preallocates the whole KV pool at start, so resident memory is set 
 
 | tool delay | tasks/min | P50 s | P95 s | wasted prefill | history hit | slowdown |
 |---|---|---|---|---|---|---|
-| zero | 0.690 | 244 | 424 | 67.0% | 39.5% | 8.74 |
-| lognormal:2:1 | 0.820 | 158 | 292 | 47.5% | 69.1% | 3.02 |
-| fixed:15 | 0.499 | 464 | 645 | 73.9% | 18.5% | 2.25 |
+| zero | 0.690 | 244 | 424 | 67.0% | 39.5% | 8.66 |
+| lognormal:2:1 | 0.654 | 104 | 246 | 28.8% | 83.0% | 2.16 |
+| fixed:15 | 0.499 | 464 | 645 | 73.9% | 18.5% | 2.24 |
 
 
 ### 4.6 Arrival rate (F11)
 
 | arrival | tasks/min | P50 s | P95 s | wasted prefill | history hit | slowdown |
 |---|---|---|---|---|---|---|
-| poisson:0.5 | 0.437 | 103 | 160 | 26.7% | 95.1% | 1.25 |
-| poisson:1 | 0.820 | 158 | 292 | 47.5% | 69.1% | 3.02 |
-| poisson:2 | 0.582 | 307 | 606 | 73.0% | 21.0% | 5.65 |
+| poisson:0.5 | 0.437 | 103 | 160 | 26.7% | 95.1% | 1.24 |
+| poisson:1 | 0.654 | 104 | 246 | 28.8% | 83.0% | 2.16 |
+| poisson:2 | 0.582 | 307 | 606 | 73.0% | 21.0% | 5.60 |
 
 
 ### 4.7 Fairness (F8)
 
 | config | short-task slowdown | long-task slowdown |
 |---|---|---|
-| P2·24K K1 J1 | 6.02 | 1.20 |
-| P2·24K K1 J∞ | 6.12 | 5.02 |
-| P2·24K K2 J2 | 4.54 | 1.31 |
-| P2·24K K2 J∞ | 4.10 | 1.94 |
+| P1·24K K1 J∞ | 4.18 | 3.22 |
+| P2·24K K1 J1 | 12.19 | 1.23 |
+| P2·24K K1 J∞ | 6.12 | 4.91 |
+| P2·24K K2 J2 | 4.56 | 1.29 |
+| P2·24K K2 J∞ | 2.78 | 1.54 |
+| P2·24K+RAM3G K2 J∞ | 6.41 | 3.35 |
+| P4·24K K4 J∞ | 1.74 | n/a |
+| P4u·24K K4 J∞ | 2.93 | 1.28 |
 
 
 ## 5. Dominant bottleneck
 
-Across baselines the share of prefill spent recomputing history ranges from 0.0% (P2·24K K1 J1) to 81.0% (P2·24K K1 J∞); full-history hit rates range 10%–100%. Across configurations, wasted-prefill share and completed tasks/min correlate at r = -0.84. Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long Retail histories), fewer slots means agents evict one another's histories while their tools run.
+Across baselines the share of prefill spent recomputing history ranges from 0.0% (P2·24K K1 J1) to 81.0% (P2·24K K1 J∞); full-history hit rates range 10%–100%. Across configurations, wasted-prefill share and completed tasks/min correlate at r = 0.17. Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long Retail histories), fewer slots means agents evict one another's histories while their tools run.
 
 
 ## 6. Phase 2 direction

@@ -252,6 +252,25 @@ def make_workload(live_dir: Path, source_count: int):
                 available_live_tasks=len(selection['task_ids']))
 
 
+def quarantine_partial(results: Path, label: str) -> None:
+    """Move records of an interrupted run (no macro_runs entry) to raw/interrupted/ so a
+    rerun of the same label is not double-counted; the interrupted attempt stays on disk."""
+    for name in ['macro_requests.jsonl', 'macro_jobs.jsonl', 'resources.jsonl']:
+        path = results / 'raw' / name
+        if not path.exists():
+            continue
+        lines = path.read_text().splitlines(keepends=True)
+        partial = [s for s in lines if s.strip() and json.loads(s).get('label') == label]
+        if not partial:
+            continue
+        target = results / 'raw/interrupted' / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open('a') as stream:
+            stream.writelines(partial)
+        path.write_text(''.join(s for s in lines if s not in partial))
+        print(f'quarantined {len(partial)} partial rows of {label} from {name}', flush=True)
+
+
 async def macro(client, results, args, server):
     if args.workload:
         workload = json.loads(Path(args.workload).read_text())
@@ -280,6 +299,7 @@ async def macro(client, results, args, server):
         if label in done:
             print('skip completed', label, flush=True)
             continue
+        quarantine_partial(results, label)
         await client.erase(P)
         config = dict(label=label, P=P, ctx_size=C, ctx_per_slot=server['ctx_per_slot'],
                       kv_unified=server['kv_unified'], cache_ram_mib=server['cache_ram_mib'],

@@ -556,3 +556,98 @@ RuntimeError: Local port 18080 is already in use; identify its owner before star
 No server recorded in .server.json
 Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
 [2026-10-26 04:20:49] === pipeline done
+[2026-10-26 08:30:27] === pipeline start, deadline 2026-10-26 16:30:27, commit 7a48931
+No server recorded in .server.json
+[2026-10-26 08:30:27] server --parallel 2 --ctx-size 24576
+llama-server ready, PID 63184 {"parallel": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0}
+Now drawing from 'AC Power'
+[2026-10-26 08:30:28] capture test 20
+already captured 79
+already captured 90
+already captured 26
+already captured 65
+already captured 97
+already captured 111
+already captured 32
+already captured 53
+already captured 42
+already captured 33
+already captured 55
+already captured 70
+already captured 71
+already captured 61
+already captured 74
+already captured 56
+already captured 100
+already captured 38
+already captured 86
+already captured 17
+[2026-10-26 08:30:30] capture train 10
+already captured 93
+already captured 99
+already captured 14
+already captured 80
+already captured 107
+already captured 95
+already captured 20
+already captured 50
+already captured 35
+already captured 48
+Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
+[2026-10-26 08:30:36] === round 0 (full)
+Stopped llama-server PID 63184
+[2026-10-26 08:30:36] server --parallel 2 --ctx-size 24576
+llama-server ready, PID 63250 {"parallel": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0}
+Now drawing from 'AC Power'
+[2026-10-26 08:30:37] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 2 --jobs-active 0
+skip completed macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:1-R0
+[2026-10-26 08:30:40] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 1 --jobs-active 1
+skip completed macro-P2-C24576-K1-J1-lognormal:2:1-poisson:1-R0
+[2026-10-26 08:30:42] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 1 --jobs-active 0
+skip completed macro-P2-C24576-K1-Jall-lognormal:2:1-poisson:1-R0
+[2026-10-26 08:30:45] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 2 --jobs-active 2
+skip completed macro-P2-C24576-K2-J2-lognormal:2:1-poisson:1-R0
+[2026-10-26 08:30:48] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --arrival poisson:1 --gap zero --k 2
+skip completed macro-P2-C24576-K2-Jall-zero-poisson:1-R0
+[2026-10-26 08:30:50] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --arrival poisson:1 --gap fixed:15 --k 2
+skip completed macro-P2-C24576-K2-Jall-fixed:15-poisson:1-R0
+[2026-10-26 08:30:53] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:0.5 --k 2
+skip completed macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:0.5-R0
+[2026-10-26 08:30:56] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:2 --k 2
+skip completed macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:2-R0
+Stopped llama-server PID 63250
+[2026-10-26 08:30:59] server --parallel 1 --ctx-size 24576
+llama-server ready, PID 63341 {"parallel": 1, "ctx_size": 24576, "ctx_per_slot": 24576, "kv_unified": false, "cache_ram_mib": 0}
+Now drawing from 'AC Power'
+[2026-10-26 08:31:00] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 1
+{"label": "macro-P1-C24576-K1-Jall-lognormal:2:1-poisson:1-R0", "P": 1, "ctx_size": 24576, "ctx_per_slot": 24576, "kv_unified": false, "cache_ram_mib": 0, "k": 1, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 778.0285116669256, "jobs_per_minute": 0.6169439715925067}
+Stopped llama-server PID 63341
+[2026-10-26 08:44:01] server --parallel 4 --ctx-size 24576
+llama-server ready, PID 63574 {"parallel": 4, "ctx_size": 24576, "ctx_per_slot": 6144, "kv_unified": false, "cache_ram_mib": 0}
+Now drawing from 'AC Power'
+[2026-10-26 08:44:02] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 4
+{"label": "macro-P4-C24576-K4-Jall-lognormal:2:1-poisson:1-R0", "P": 4, "ctx_size": 24576, "ctx_per_slot": 6144, "kv_unified": false, "cache_ram_mib": 0, "k": 4, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 3, "failed": 5, "makespan_s": 520.9381611251738, "jobs_per_minute": 0.3455304553062847}
+Stopped llama-server PID 63574
+[2026-10-26 08:52:46] server --parallel 4 --ctx-size 24576 --kv-unified
+llama-server ready, PID 63684 {"parallel": 4, "ctx_size": 24576, "ctx_per_slot": 24576, "kv_unified": true, "cache_ram_mib": 0}
+Now drawing from 'AC Power'
+[2026-10-26 08:52:47] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 4
+{"label": "macro-P4u-C24576-K4-Jall-lognormal:2:1-poisson:1-R0", "P": 4, "ctx_size": 24576, "ctx_per_slot": 24576, "kv_unified": true, "cache_ram_mib": 0, "k": 4, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 4, "failed": 4, "makespan_s": 588.7862760839052, "jobs_per_minute": 0.40761819653180686}
+Stopped llama-server PID 63684
+[2026-10-26 09:02:39] server --parallel 2 --ctx-size 24576 --cache-ram 3072
+llama-server ready, PID 63820 {"parallel": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 3072}
+Now drawing from 'AC Power'
+[2026-10-26 09:02:40] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 0 --gap lognormal:2:1 --arrival poisson:1 --k 2
+{"label": "macro-P2-RAM3072-C24576-K2-Jall-lognormal:2:1-poisson:1-R0", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 3072, "k": 2, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 0, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 726.4394640829414, "jobs_per_minute": 0.6607570537291128}
+Wrote runs/final/PHASE1_REPORT.md and figures in runs/final/figures | notes: none
+[2026-10-26 09:14:53] === round 1 (full)
+Stopped llama-server PID 63820
+[2026-10-26 09:14:54] server --parallel 2 --ctx-size 24576
+llama-server ready, PID 63987 {"parallel": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0}
+Now drawing from 'AC Power'
+[2026-10-26 09:14:55] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 1 --gap lognormal:2:1 --arrival poisson:1 --k 2 --jobs-active 0
+{"label": "macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:1-R1", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 0, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 1, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 983.1967779581901, "jobs_per_minute": 0.4882033899631145}
+[2026-10-26 09:31:21] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 1 --gap lognormal:2:1 --arrival poisson:1 --k 1 --jobs-active 1
+{"label": "macro-P2-C24576-K1-J1-lognormal:2:1-poisson:1-R1", "P": 2, "ctx_size": 24576, "ctx_per_slot": 12288, "kv_unified": false, "cache_ram_mib": 0, "k": 1, "j": 1, "gap_mode": "lognormal:2:1", "arrival": "poisson:1", "repeat": 1, "steps_limit": 0, "tasks": 8, "completed": 8, "failed": 0, "makespan_s": 1055.5915003749542, "jobs_per_minute": 0.45472135748487963}
+[2026-10-26 09:48:59] bench macro --workload runs/final/workload_eval.json --num-jobs 8 --repeats 1 --skip-done --repeat-start 1 --gap lognormal:2:1 --arrival poisson:1 --k 1 --jobs-active 0
+[2026-10-26 09:54:55] === stopped manually by user request (resumable)
