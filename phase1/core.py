@@ -20,9 +20,9 @@ class Jsonl:
 
 
 class ModelClient:
-    def __init__(self, base_url: str, transport=None):
+    def __init__(self, base_url: str, transport=None, timeout: float = 300):
         self.http = httpx.AsyncClient(
-            base_url=base_url, timeout=300,
+            base_url=base_url, timeout=timeout,
             limits=httpx.Limits(max_connections=16, max_keepalive_connections=8),
             transport=transport,
         )

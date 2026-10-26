@@ -119,6 +119,14 @@ async def server_config(client) -> dict:
                 cache_ram_mib=info.get('cache_ram_mib'), build=props.get('build_info'))
 
 
+def power_state() -> str | None:
+    try:
+        return subprocess.run(['pmset', '-g', 'batt'], capture_output=True, text=True,
+                              check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None  # not macOS
+
+
 def git_commit() -> str | None:
     try:
         return subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True,
@@ -259,7 +267,8 @@ async def macro(client, results, args, server):
     job_log = Jsonl(results / 'raw/macro_jobs.jsonl')
     run_log = Jsonl(results / 'raw/macro_runs.jsonl')
     P, C = server['P'], server['ctx_size']
-    cases = list(itertools.product(args.k, args.jobs_active, args.gap, args.arrival, range(args.repeats)))
+    cases = list(itertools.product(args.k, args.jobs_active, args.gap, args.arrival,
+                                   range(args.repeat_start, args.repeat_start + args.repeats)))
     random.Random(1025).shuffle(cases)
     for k, j, gap_spec, arrival_spec, repeat in cases:
         await client.erase(P)
@@ -345,6 +354,9 @@ def main():
     add_results_arg(parser)
     parser.add_argument('--base-url', default=None, help='Defaults to the running phase1.server port')
     parser.add_argument('--repeats', type=int, default=3)
+    parser.add_argument('--repeat-start', type=int, default=0,
+                        help='Index of the first macro repeat (seeds arrivals, job order and gaps)')
+    parser.add_argument('--timeout', type=float, default=300, help='Per-request HTTP deadline (s)')
     # micro / cache
     parser.add_argument('--lengths', type=int_list, default=None, help='e.g. 512,2048,4096,8192')
     parser.add_argument('--outputs', type=int_list, default=[64, 128])
@@ -375,11 +387,12 @@ def main():
 
 async def run_suite(args, results):
     base = args.base_url or f'http://127.0.0.1:{server_info().get("port", 18080)}'
-    async with ModelClient(base) as client:
+    async with ModelClient(base, timeout=args.timeout) as client:
         server = await server_config(client)
         Jsonl(results / 'raw/runs_meta.jsonl').write(dict(
             suite=args.suite, started_unix=time.time(), git_commit=git_commit(),
-            args=vars(args), server=server, server_command=server_info().get('command')))
+            args=vars(args), server=server, server_command=server_info().get('command'),
+            power=power_state()))
         # Warm up the compute path; individual suites reset their cache state.
         await client.complete(payload('Warm up the model.', 16))
         if args.suite == 'micro':

@@ -80,7 +80,7 @@ async def test_macro_end_to_end_with_admission_limit_and_overflow(tmp_path, monk
     workload = tmp_path / 'w.json'
     workload.write_text(json.dumps(dict(tasks=[small, big])))
     args = argparse.Namespace(workload=str(workload), steps_limit=0, num_jobs=4, k=[2], jobs_active=[1],
-                              gap=['fixed:0.01'], arrival=['batch'], repeats=1)
+                              gap=['fixed:0.01'], arrival=['batch'], repeats=1, repeat_start=0)
     server = dict(P=2, ctx_size=80, ctx_per_slot=limit, kv_unified=False, cache_ram_mib=0)
     async with ModelClient('http://test', transport=httpx.MockTransport(handler)) as client:
         await bench.macro(client, tmp_path, args, server)

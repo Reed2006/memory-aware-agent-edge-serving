@@ -1,8 +1,10 @@
 """Per-configuration macro summary: completion, tail latency, wasted prefill and fairness.
 
-Slowdown = job latency (arrival -> done, admission wait included) divided by the
-isolated service time of the same source task, taken from J=1, K=1 runs with the
-same gap spec. Without such runs slowdown columns are empty.
+Slowdown = job latency (arrival -> done, admission wait included) divided by
+(isolated compute time of the same source task + this job's own tool delays).
+Isolated compute = median(service - tool delays) over J=1, K=1 runs of that task,
+pooled over server configurations. Without J=1, K=1 runs
+slowdown columns are empty.
 """
 
 import argparse
@@ -40,9 +42,10 @@ def jain(values) -> float:
     return float(values.sum() ** 2 / (len(values) * (values ** 2).sum())) if len(values) else np.nan
 
 
-def isolated_service(jobs: pd.DataFrame) -> pd.Series:
-    ref = jobs[(jobs.k == 1) & (jobs.j == 1) & (jobs.status == 'ok')]
-    return ref.groupby(['gap_mode', 'steps_limit', 'task_id']).service_s.median()
+def isolated_compute(jobs: pd.DataFrame) -> pd.Series:
+    ref = jobs[(jobs.k == 1) & (jobs.j == 1) & (jobs.status == 'ok')].copy()
+    ref['compute_s'] = ref.service_s - ref.gap_total_s
+    return ref.groupby(['steps_limit', 'task_id']).compute_s.median()
 
 
 def summarize(root: Path) -> pd.DataFrame:
@@ -55,9 +58,9 @@ def summarize(root: Path) -> pd.DataFrame:
         frame['j'] = frame['j'].fillna(0).astype(int)
         frame['steps_limit'] = frame['steps_limit'].fillna(0).astype(int)
     requests = request_metrics(requests)
-    reference = isolated_service(jobs)
-    keys = list(zip(jobs.gap_mode, jobs.steps_limit, jobs.task_id))
-    jobs['isolated_s'] = [reference.get(key, np.nan) for key in keys]
+    reference = isolated_compute(jobs)
+    keys = list(zip(jobs.steps_limit, jobs.task_id))
+    jobs['isolated_s'] = [reference.get(key, np.nan) for key in keys] + jobs.gap_total_s
     jobs['slowdown'] = np.where(jobs.status == 'ok', jobs.latency_s / jobs.isolated_s, np.nan)
     long_cut = jobs.groupby('task_id').expected_output_tokens.first().median()
     rows = []
