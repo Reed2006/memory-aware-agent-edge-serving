@@ -1,0 +1,2 @@
+P,ctx_size,kv_unified,cache_ram_mib,k,j,gap_mode,arrival,steps_limit,runs,submitted,completed,failed,failure_types,jobs_per_min_mean,jobs_per_min_sd,p50_s,p95_s,p99_s,admission_wait_mean_s,fifo_wait_mean_s,fifo_wait_p95_s,prefill_tokens,wasted_prefill_tokens,wasted_prefill_fraction,full_history_hit_rate,slowdown_mean,slowdown_p95,slowdown_max,jain_1_over_slowdown,slowdown_long_mean,slowdown_short_mean
+4,16384,False,0,2,0,zero,batch,2,1,2,0,2,HTTPStatusError,0.0,,,,,3.3352989703416824e-07,5.131261423230171e-05,6.711878813803196e-05,0.0,0.0,,,,,,,,

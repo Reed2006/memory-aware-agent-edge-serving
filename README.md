@@ -56,6 +56,23 @@ DeepSeek 仅用于 live 用户模拟，不在正式回放期间调用。优先�
 
 依次运行，禁止采集与性能实验同时占用推理服务。live 采集按现有 task 文件跳过已完成记录。性能文件采用 append-only；重新复现实验前使用新的结果目录或归档原结果，不要把两轮完整复跑追加后当成额外独立重复。当前程序以项目根目录为工作目录。
 
+## 扫描实验（P0 新增）
+
+`results/` 是冻结的 Mac pilot，`verify`/`report`/`analyze` 的默认值仍指向它。新实验一律写入独立目录（`--results-dir runs/<name>`），不要追加进 `results/`。
+
+- `phase1.server`：`--parallel P`、`--ctx-size`（总 KV token 预算；分区模式下每 slot = ctx/P）、`--kv-unified`、`--cache-ram`（llama.cpp 内置 host prompt cache，作为“固定缓存策略”baseline）、`--port`；`python -m phase1.server stop` 只停止 `.server.json` 记录且确认是 llama-server 的进程。
+- `phase1.bench macro`：`--k`（请求并发）、`--jobs-active`（任务级准入 J，0=不限，准入等待计入时延）、`--gap`（`recorded|zero|fixed:S|exp:MEAN|lognormal:MEDIAN:SIGMA`）、`--arrival`（`batch|poisson:每分钟任务数`）、`--num-jobs`、`--source-count`（0=全部 live 任务）、`--live-dir`、`--steps-limit`（仅冒烟）。同一 repeat 下各配置看到相同的到达、任务顺序与间隔。P、KV 预算、build 从 `/props` 与 `.server.json` 读取并写入每一行；`raw/runs_meta.jsonl` 记录参数与 git commit。
+- `phase1.bench micro|cache`：`--lengths`、`--outputs`、`--k`。
+- `phase1.sweep`：对每组 P × ctx × cache-ram × unified 重启 server 后运行 bench。
+- `phase1.summarize --results-dir runs/<name>`：每个配置的完成/失败（含 context 溢出原因）、jobs/min、P50/P95/P99、FIFO 与准入等待、浪费的 prefill token 比例、完整历史命中率、slowdown（以同 gap 的 J=1,K=1 运行为孤立基准）与 Jain 指数。要算 slowdown，扫描里必须包含 `--k 1 --jobs-active 1`。
+
+```bash
+.venv/bin/python -m phase1.sweep --results-dir runs/p-sweep --parallel 1,2,4 --ctx-size 24576 -- \
+  macro --source-count 0 --k 1,2,4 --jobs-active 0,1,2 --gap fixed:2,lognormal:5:1 \
+  --arrival poisson:0.5 --num-jobs 8 --repeats 3
+.venv/bin/python -m phase1.summarize --results-dir runs/p-sweep
+```
+
 ## 实验口径
 
 `K` 限制正在进行模型调用的请求数；`P=2` 是固定服务端 slot 数。工具等待不占 `K`。FIFO 按每一步 ready 后的入队顺序 dispatch，不能把它理解为对完整 task 的永久优先权。

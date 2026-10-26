@@ -30,7 +30,7 @@ from tau2.runner import run_single_task
 from tau2.user import user_simulator
 from tau2.utils.llm_utils import to_litellm_messages
 
-from phase1.core import Jsonl
+from phase1.core import Jsonl, add_results_arg, server_info
 from phase1.adapters import normalize_tool_message
 
 
@@ -41,8 +41,10 @@ def main():
     parser.add_argument('--seed', type=int, default=291)
     parser.add_argument('--max-steps', type=int, default=40)
     parser.add_argument('--user-model', default='deepseek-flash')
+    add_results_arg(parser)
     args = parser.parse_args()
-    output = Path('results/raw') / f'live_{args.split}'
+    local = f'http://127.0.0.1:{server_info().get("port", 18080)}'
+    output = Path(args.results_dir) / 'raw' / f'live_{args.split}'
     output.mkdir(parents=True, exist_ok=True)
     key = os.environ.get('DEEPSEEK_API_KEY') or Path('API.md').read_text().strip()
     selected = random.Random(args.seed).sample(get_tasks(args.split), args.count)
@@ -90,7 +92,7 @@ def main():
         else:
             body['chat_template_kwargs'] = {'enable_thinking': False}
             body['cache_prompt'] = True
-            url, headers = 'http://127.0.0.1:18080/v1/chat/completions', {}
+            url, headers = local + '/v1/chat/completions', {}
         started = time.perf_counter()
         response = client.post(url, json=body, headers=headers)
         if response.status_code != 200:
@@ -102,10 +104,10 @@ def main():
             usage_log.write({'task_id': current['task_id'], 'model': data.get('model'),
                              'usage': data.get('usage'), 'elapsed_s': elapsed})
         else:
-            template = client.post('http://127.0.0.1:18080/apply-template', json=body)
+            template = client.post(local + '/apply-template', json=body)
             template.raise_for_status()
             prompt = template.json()['prompt']
-            token_response = client.post('http://127.0.0.1:18080/tokenize', json={
+            token_response = client.post(local + '/tokenize', json={
                 'content': prompt, 'add_special': False, 'parse_special': True})
             token_response.raise_for_status()
             tokens = token_response.json()['tokens']

@@ -44,6 +44,11 @@ class ModelClient:
     async def tokens(self, text: str) -> list[int]:
         return (await self.post('/tokenize', {'content': text, 'add_special': False}))['tokens']
 
+    async def props(self) -> dict:
+        response = await self.http.get('/props')
+        response.raise_for_status()
+        return response.json()
+
     async def erase(self, slots: int = 2) -> None:
         for slot in range(slots):
             await self.post(f'/slots/{slot}?action=erase', {})
@@ -107,6 +112,9 @@ class Fifo:
                     future.set_result(response)
             except Exception as error:
                 row.update(status='error', error_type=type(error).__name__)
+                if isinstance(error, httpx.HTTPStatusError):
+                    # Local llama-server bodies (e.g. context overflow) carry no secrets.
+                    row['error'] = f'HTTP {error.response.status_code}: {error.response.text[:300]}'
                 if not future.done():
                     future.set_exception(error)
             finally:
@@ -114,6 +122,16 @@ class Fifo:
                 row['roundtrip_s'] = row['done_s'] - started
                 self.log.write(row)
                 self.queue.task_done()
+
+
+def add_results_arg(parser, default='results'):
+    parser.add_argument('--results-dir', default=default,
+                        help='Root for raw logs, summaries and metadata of one experiment')
+
+
+def server_info(path: Path = Path('.server.json')) -> dict:
+    """Metadata written by phase1.server for the backend that is currently running."""
+    return json.loads(path.read_text()) if path.exists() else {}
 
 
 def append_step(previous: list[int], generated: list[int], delta: list[int]) -> list[int]:

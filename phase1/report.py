@@ -15,7 +15,10 @@ def table(headers, rows):
 
 
 def main():
-    root = Path('results')
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--results-dir', default='results')
+    root = Path(parser.parse_args().results_dir)
     verified = json.loads((root / 'verification.json').read_text())
     restore_check = json.loads((root / 'restore_validation.json').read_text())
     manifest = json.loads((root / 'manifest.json').read_text())
@@ -213,7 +216,7 @@ AWS CPU 首先复现相同模型、runtime、workload 与固定并发基线，�
 重新生成：`.venv/bin/python -m phase1.verify`、`.venv/bin/python -m phase1.analyze`、`.venv/bin/python -m phase1.report`。性能脚本追加原始日志，完整复跑前应归档已有结果，不能直接追加混成更多独立重复。
 '''
     (root / 'REPORT.md').write_text(content)
-    print('Wrote results/REPORT.md')
+    print('Wrote', root / 'REPORT.md')
 
 
 if __name__ == '__main__':

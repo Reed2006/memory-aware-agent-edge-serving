@@ -1,12 +1,13 @@
 """Independent post-benchmark correctness check for slot state restoration."""
 
+import argparse
 import asyncio
 import hashlib
 import json
 from pathlib import Path
 
 from phase1.bench import payload
-from phase1.core import ModelClient, append_step
+from phase1.core import ModelClient, add_results_arg, append_step, server_info
 
 
 def digest(path):
@@ -14,11 +15,13 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-async def main():
-    original = Path('results/cache/validation-original.bin')
-    restored = Path('results/cache/validation-restored.bin')
-    async with ModelClient('http://127.0.0.1:18080') as client:
-        await client.erase()
+async def main(results: Path):
+    info = server_info()
+    slot_dir = Path(info.get('slot_save_path', results / 'cache'))
+    original = slot_dir / 'validation-original.bin'
+    restored = slot_dir / 'validation-restored.bin'
+    async with ModelClient(f'http://127.0.0.1:{info.get("port", 18080)}') as client:
+        await client.erase(info.get('parallel', 2))
         tokens = (await client.tokens(
             'An agent retains historical evidence about an order and its items. ' * 900))[:4096]
         first = await client.complete(payload(tokens, 32, id_slot=0))
@@ -44,7 +47,7 @@ async def main():
             expected_output_tokens=expected['tokens'], restored_output_tokens=actual['tokens'],
             expected_timings=expected['timings'], restored_timings=actual['timings'],
         )
-        Path('results/restore_validation.json').write_text(json.dumps(result, indent=2))
+        (results / 'restore_validation.json').write_text(json.dumps(result, indent=2))
         original.unlink(missing_ok=True)
         restored.unlink(missing_ok=True)
         assert result['generated_tokens_equal'], 'Restoration changed the deterministic continuation'
@@ -53,4 +56,6 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    parser = argparse.ArgumentParser()
+    add_results_arg(parser)
+    asyncio.run(main(Path(parser.parse_args().results_dir)))

@@ -1,5 +1,6 @@
-"""Audit work conservation and complete records after running the experiment suites."""
+"""Audit work conservation for the original Mac pilot (exact counts are pinned to that run)."""
 
+import argparse
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -10,15 +11,18 @@ def read(path):
 
 
 def main():
-    restored = json.loads(Path('results/restore_validation.json').read_text())
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--results-dir', default='results')
+    root = Path(parser.parse_args().results_dir)
+    restored = json.loads((root / 'restore_validation.json').read_text())
     assert restored['generated_tokens_equal']
     assert len(restored['expected_output_tokens']) == len(restored['restored_output_tokens']) == 64
     audited_live_calls = 0
-    for path in Path('results/raw/live_test').glob('task_*.json'):
+    for path in (root / 'raw/live_test').glob('task_*.json'):
         for call in json.loads(path.read_text())['calls']:
             assert len(call['prompt_tokens']) == call['response']['usage']['prompt_tokens']
             audited_live_calls += 1
-    micro = read('results/raw/micro_requests.jsonl')
+    micro = read(root / 'raw/micro_requests.jsonl')
     assert len(micro) == 54, 'Expected 36 micro cases / 54 requests'
     micro_cases = Counter((r['length'], r['output'], r['k'], r['repeat']) for r in micro)
     assert len(micro_cases) == 36
@@ -31,23 +35,23 @@ def main():
         assert row['timings']['prompt_n'] == row['input_tokens'] == row['length']
         assert not row['truncated']
 
-    cache = read('results/raw/cache.jsonl')
+    cache = read(root / 'raw/cache.jsonl')
     assert len(cache) == 30
     assert len({(r['mode'], r['length'], r['repeat']) for r in cache}) == 30
     for row in cache:
         assert row.get('status', 'ok') == 'ok', row['label']
         assert row['predicted_n'] == 32
 
-    workload = json.loads(Path('results/workload.json').read_text())
+    workload = json.loads((root / 'workload.json').read_text())
     for task in workload['tasks']:
         current_length = previous_output = 0
         for step in task['steps']:
             current_length += previous_output + len(step['delta'])
             assert current_length == step['source_prompt_n'], 'Replay input length differs from captured source'
             previous_output = step['output']
-    jobs = read('results/raw/macro_jobs.jsonl')
-    runs = read('results/raw/macro_runs.jsonl')
-    requests = read('results/raw/macro_requests.jsonl')
+    jobs = read(root / 'raw/macro_jobs.jsonl')
+    runs = read(root / 'raw/macro_runs.jsonl')
+    requests = read(root / 'raw/macro_requests.jsonl')
     expected_steps = sum(len(t['steps']) for t in workload['tasks'])
     expected_output = sum(s['output'] for t in workload['tasks'] for s in t['steps'])
     n = len(workload['tasks'])
@@ -87,7 +91,7 @@ def main():
                   all_replay_input_lengths_match_live_source=True,
                   deterministic_restore_output_verified=True,
                   all_fifo_dispatch_orders_hold=True)
-    Path('results/verification.json').write_text(json.dumps(result, indent=2))
+    (root / 'verification.json').write_text(json.dumps(result, indent=2))
     print(json.dumps(result, indent=2))
 
 

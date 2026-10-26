@@ -1,0 +1,1 @@
+{"label": "macro-P4-C16384-K2-Jall-zero-batch-R0-S2", "P": 4, "ctx_size": 16384, "ctx_per_slot": 4096, "kv_unified": false, "cache_ram_mib": 0, "k": 2, "j": 0, "gap_mode": "zero", "arrival": "batch", "repeat": 0, "steps_limit": 2, "tasks": 2, "completed": 0, "failed": 2, "makespan_s": 0.2054504998959601, "jobs_per_minute": 0.0}

@@ -1,5 +1,6 @@
 """Derive tables and export publication-quality plots from raw observations."""
 
+import argparse
 import json
 import platform
 import sys
@@ -16,7 +17,7 @@ COLORS = ['#156b7c', '#e47d54', '#6878a9', '#90b7a5', '#bc9a63']
 
 
 def backend_label():
-    path = Path('results/server.json')
+    path = OUT.parent / 'server.json'
     command = json.loads(path.read_text())['command'] if path.exists() else []
     if '--n-gpu-layers' in command and command[command.index('--n-gpu-layers')+1] == '0':
         return f'{platform.machine()} CPU'
@@ -281,6 +282,13 @@ def live():
 
 
 def main():
+    global RAW, OUT, FIG
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--results-dir', default='results')
+    root = Path(parser.parse_args().results_dir)
+    # The original pilot keeps its figures at the project root.
+    RAW, OUT = root / 'raw', root / 'summary'
+    FIG = Path('figures') if root == Path('results') else root / 'figures'
     OUT.mkdir(parents=True, exist_ok=True)
     FIG.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10,
@@ -295,7 +303,7 @@ def main():
     macro()
     resources()
     live()
-    print('Wrote tables to results/summary and figures to figures/', flush=True)
+    print(f'Wrote tables to {OUT} and figures to {FIG}', flush=True)
 
 
 if __name__ == '__main__':

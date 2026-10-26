@@ -1,19 +1,30 @@
-"""Microbenchmarks and tau-derived append-only multi-step serving replay."""
+"""Microbenchmarks and tau-derived append-only multi-step serving replay.
+
+Defaults reproduce the original Mac pilot. Sweep axes for macro:
+  --k        request concurrency of the external FIFO (in-flight model calls)
+  --jobs-active  J, task-level admission: at most J agent tasks hold state at once
+  --gap      tool/idle delay between steps: recorded | zero | fixed:S | exp:MEAN | lognormal:MEDIAN:SIGMA
+  --arrival  batch (all tasks within 0.3 s) | poisson:JOBS_PER_MIN
+Server-side slots P and KV budget come from the running llama-server (phase1.server)
+and are recorded with every row. A J=1, K=1 run supplies the isolated service time
+used by phase1.summarize for slowdown/fairness.
+"""
 
 import argparse
 import asyncio
-import hashlib
 import itertools
 import json
+import math
 import random
+import subprocess
 import time
 from pathlib import Path
 
 import psutil
 
-from phase1.core import Fifo, Jsonl, ModelClient, append_step, common_prefix
+from phase1.core import Fifo, Jsonl, ModelClient, add_results_arg, append_step, common_prefix, server_info
 
-BASE = 'http://127.0.0.1:18080'
+BATCH_SPREAD_S = 0.3
 
 
 def payload(prompt, output=64, **kwargs):
@@ -22,19 +33,63 @@ def payload(prompt, output=64, **kwargs):
                 **kwargs)
 
 
+def gap_delay(spec: str, recorded: float, key: str) -> float:
+    """Deterministic per-(repeat, job, step) delay so every configuration sees the same gaps."""
+    kind, *params = spec.split(':')
+    rng = random.Random(f'gap-{spec}-{key}')
+    if kind == 'recorded':
+        return recorded
+    if kind == 'zero':
+        return 0.0
+    if kind == 'fixed':
+        return float(params[0])
+    if kind == 'exp':
+        return rng.expovariate(1 / float(params[0]))
+    if kind == 'lognormal':
+        median, sigma = map(float, params)
+        return rng.lognormvariate(math.log(median), sigma)
+    raise ValueError(f'Unknown gap spec {spec!r}')
+
+
+def arrival_times(spec: str, count: int, seed: int) -> list[float]:
+    kind, *params = spec.split(':')
+    rng = random.Random(f'arrival-{spec}-{seed}')
+    if kind == 'batch':
+        return [rng.uniform(0, BATCH_SPREAD_S) for _ in range(count)]
+    if kind == 'poisson':
+        rate_per_s = float(params[0]) / 60
+        times, now = [], 0.0
+        for _ in range(count):
+            times.append(now)
+            now += rng.expovariate(rate_per_s)
+        return times
+    raise ValueError(f'Unknown arrival spec {spec!r}')
+
+
+def job_sources(tasks: list, count: int, seed: int) -> list:
+    """Balanced reuse of source tasks: each appears floor/ceil(count/len) times, order seeded."""
+    order = []
+    rng = random.Random(f'jobs-{seed}')
+    while len(order) < count:
+        block = list(range(len(tasks)))
+        rng.shuffle(block)
+        order += block
+    return [tasks[i] for i in order[:count]]
+
+
 class Sampler:
-    def __init__(self, label):
+    def __init__(self, label, results):
         self.label = label
         self.stop = asyncio.Event()
-        self.pid = json.loads(Path('results/server.json').read_text())['pid']
-        self.log = Jsonl(Path('results/raw/resources.jsonl'))
+        self.pid = server_info().get('pid')
+        self.log = Jsonl(results / 'raw/resources.jsonl')
 
     async def run(self):
-        process = psutil.Process(self.pid)
+        process = psutil.Process(self.pid) if self.pid else None
         while not self.stop.is_set():
             memory, swap = psutil.virtual_memory(), psutil.swap_memory()
             self.log.write(dict(label=self.label, time_s=time.perf_counter(),
-                server_rss=process.memory_info().rss,
+                server_rss=process.memory_info().rss if process else None,
                 runner_rss=psutil.Process().memory_info().rss,
                 system_available=memory.available, swap_used=swap.used,
                 swap_in=swap.sin, swap_out=swap.sout))
@@ -44,8 +99,8 @@ class Sampler:
                 pass
 
 
-async def measured(label, operation):
-    sampler = Sampler(label)
+async def measured(label, operation, results):
+    sampler = Sampler(label, results)
     task = asyncio.create_task(sampler.run())
     try:
         return await operation()
@@ -54,13 +109,34 @@ async def measured(label, operation):
         await task
 
 
-async def micro(client):
-    request_log = Jsonl(Path('results/raw/micro_requests.jsonl'))
-    base = await client.tokens('A factual report discusses systems, memory, queues and tools. ' * 1600)
-    cases = list(itertools.product([512, 2048, 4096], [64, 128], [1, 2], range(3)))
+async def server_config(client) -> dict:
+    props = await client.props()
+    info = server_info()
+    slots = props.get('total_slots') or info.get('parallel', 2)
+    return dict(P=slots,
+                ctx_per_slot=props.get('default_generation_settings', {}).get('n_ctx'),
+                ctx_size=info.get('ctx_size'), kv_unified=info.get('kv_unified'),
+                cache_ram_mib=info.get('cache_ram_mib'), build=props.get('build_info'))
+
+
+def git_commit() -> str | None:
+    try:
+        return subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True,
+                              text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+async def micro(client, results, lengths, outputs, ks, repeats, slots):
+    request_log = Jsonl(results / 'raw/micro_requests.jsonl')
+    sentence = 'A factual report discusses systems, memory, queues and tools. '
+    base = await client.tokens(sentence * max(1600, max(lengths) // 8))
+    if len(base) < max(lengths):
+        raise ValueError('Synthetic text is shorter than the largest requested input')
+    cases = list(itertools.product(lengths, outputs, ks, range(repeats)))
     random.Random(291).shuffle(cases)
     for index, (length, output, k, repeat) in enumerate(cases):
-        await client.erase()
+        await client.erase(slots)
         label = f'micro-L{length}-O{output}-K{k}-R{repeat}'
 
         async def run():
@@ -71,19 +147,20 @@ async def micro(client):
                                 dict(label=label, length=length, output=output, k=k,
                                      repeat=repeat, request=j)) for j in range(k)
                 ], return_exceptions=True)
-        await measured(label, run)
+        await measured(label, run, results)
         print('micro', index + 1, '/', len(cases), label, flush=True)
 
 
-async def cache_bench(client):
-    log = Jsonl(Path('results/raw/cache.jsonl'))
-    base = await client.tokens('An agent retains historical evidence about an order and its items. ' * 900)
+async def cache_bench(client, results, lengths, repeats, slots):
+    log = Jsonl(results / 'raw/cache.jsonl')
+    base = await client.tokens('An agent retains historical evidence about an order and its items. ' *
+                               max(900, max(lengths) // 8))
     delta = await client.tokens('\nTool result: order is eligible. Continue.\n')
-    cases = list(itertools.product([2048, 4096], range(3),
+    cases = list(itertools.product(lengths, range(repeats),
                                   ['retain', 'wait', 'overwrite', 'erase', 'save_restore']))
     random.Random(2526).shuffle(cases)
     for length, repeat, mode in cases:
-        await client.erase()
+        await client.erase(slots)
         label = f'cache-L{length}-R{repeat}-{mode}'
 
         async def run():
@@ -116,21 +193,21 @@ async def cache_bench(client):
                        input_tokens=len(prompt), predicted_n=response['timings']['predicted_n'])
             log.write(row)
         try:
-            await measured(label, run)
+            await measured(label, run, results)
         except Exception as error:
             log.write(dict(label=label, length=length, repeat=repeat, mode=mode,
                            status='error', error_type=type(error).__name__))
         print(label, flush=True)
-    Path('results/cache/probe.bin').unlink(missing_ok=True)
+    slot_dir = Path(server_info().get('slot_save_path', results / 'cache'))
+    (slot_dir / 'probe.bin').unlink(missing_ok=True)
 
 
-async def make_workload(client):
+def make_workload(live_dir: Path, source_count: int):
     workloads = []
-    selection = json.loads(Path('results/raw/live_test/selection.json').read_text())
-    # The local pilot uses the first four IDs in the pre-recorded random order,
-    # independent of semantic success. All eight live runs remain available.
-    selected_ids = selection['task_ids'][:4]
-    for path in sorted(Path('results/raw/live_test').glob('task_*.json')):
+    selection = json.loads((live_dir / 'selection.json').read_text())
+    # Use a prefix of the pre-recorded random order, independent of semantic success.
+    selected_ids = selection['task_ids'][:source_count] if source_count else selection['task_ids']
+    for path in sorted(live_dir.glob('task_*.json')):
         record = json.loads(path.read_text())
         if record['task_id'] not in selected_ids:
             continue
@@ -158,98 +235,161 @@ async def make_workload(client):
         workloads.append(dict(task_id=record['task_id'], steps=steps,
                               live_status=record['status'], env_reward=record.get('env_reward')))
     if not workloads:
-        raise RuntimeError('No recorded evaluation workloads')
-    result = dict(format='tau-derived-append-only-v1', tasks=workloads,
-                  caveat='Recorded step counts/output counts and input growth; prompt rewriting is transformed to append-only. Not semantic execution.',
-                  source_split='test', source_seed=291, selected_ids=selected_ids,
-                  selection_rule='First 4 IDs in the frozen random order; includes semantic failures',
-                  available_live_tasks=len(selection['task_ids']))
-    Path('results/workload.json').write_text(json.dumps(result))
-    return result
+        raise RuntimeError(f'No recorded workloads in {live_dir}')
+    return dict(format='tau-derived-append-only-v1', tasks=workloads,
+                caveat='Recorded step counts/output counts and input growth; prompt rewriting is transformed to append-only. Not semantic execution.',
+                source_dir=str(live_dir), source_split=selection.get('split'),
+                source_seed=selection.get('seed'), selected_ids=selected_ids,
+                selection_rule=f'First {source_count or "all"} IDs in the frozen random order; includes semantic failures',
+                available_live_tasks=len(selection['task_ids']))
 
 
-async def macro(client, selected_k=None, gaps=None, workload_path=None, repeats=3):
-    workload = (json.loads(Path(workload_path).read_text()) if workload_path
-                else await make_workload(client))
-    if workload_path:
-        Path('results/workload.json').write_text(json.dumps(workload))
-    request_log = Jsonl(Path('results/raw/macro_requests.jsonl'))
-    job_log = Jsonl(Path('results/raw/macro_jobs.jsonl'))
-    run_log = Jsonl(Path('results/raw/macro_runs.jsonl'))
-    cases = list(itertools.product(selected_k or [1, 2], gaps or ['recorded', 'zero'], range(repeats)))
+async def macro(client, results, args, server):
+    if args.workload:
+        workload = json.loads(Path(args.workload).read_text())
+    else:
+        workload = make_workload(Path(args.live_dir), args.source_count)
+    (results / 'workload.json').write_text(json.dumps(workload))
+    tasks = workload['tasks']
+    if args.steps_limit:
+        # Smoke tests only: truncating changes the workload, and the label records it.
+        tasks = [dict(t, steps=t['steps'][:args.steps_limit]) for t in tasks]
+    num_jobs = args.num_jobs or len(tasks)
+    request_log = Jsonl(results / 'raw/macro_requests.jsonl')
+    job_log = Jsonl(results / 'raw/macro_jobs.jsonl')
+    run_log = Jsonl(results / 'raw/macro_runs.jsonl')
+    P, C = server['P'], server['ctx_size']
+    cases = list(itertools.product(args.k, args.jobs_active, args.gap, args.arrival, range(args.repeats)))
     random.Random(1025).shuffle(cases)
-    for k, gap_mode, repeat in cases:
-        await client.erase()
-        label = f'macro-K{k}-{gap_mode}-R{repeat}'
-        # Repeated seeds alter arrival staggering while each configuration sees
-        # the same schedule for that repeat. This is a finite batch, not open loop.
-        rng = random.Random(291 + repeat)
-        arrivals = [rng.uniform(0, 0.3) for _ in workload['tasks']]
+    for k, j, gap_spec, arrival_spec, repeat in cases:
+        await client.erase(P)
+        suffix = f'-S{args.steps_limit}' if args.steps_limit else ''
+        label = f'macro-P{P}-C{C}-K{k}-J{j or "all"}-{gap_spec}-{arrival_spec}-R{repeat}{suffix}'
+        config = dict(label=label, P=P, ctx_size=C, ctx_per_slot=server['ctx_per_slot'],
+                      kv_unified=server['kv_unified'], cache_ram_mib=server['cache_ram_mib'],
+                      k=k, j=j, gap_mode=gap_spec, arrival=arrival_spec, repeat=repeat,
+                      steps_limit=args.steps_limit)
+        # Same repeat => same arrivals, job order and gaps across all configurations.
+        sources = job_sources(tasks, num_jobs, 291 + repeat)
+        arrivals = arrival_times(arrival_spec, num_jobs, 291 + repeat)
+        admission = asyncio.Semaphore(j) if j else None
         start = time.perf_counter()
 
         async def run():
             async with Fifo(k, client.complete, request_log) as fifo:
-                async def job(source, arrival):
+                async def job(job_index, source, arrival):
                     await asyncio.sleep(max(0, start + arrival - time.perf_counter()))
                     arrived = time.perf_counter()
+                    if admission:
+                        await admission.acquire()
+                    admitted = time.perf_counter()
                     prompt, generated = [], []
                     total_output, prefix_verified = 0, True
-                    status, done_steps = 'ok', 0
+                    status, error, done_steps, gap_total = 'ok', None, 0, 0.0
                     try:
                         for step_index, step in enumerate(source['steps']):
-                            if step_index and gap_mode == 'recorded':
-                                await asyncio.sleep(step['gap_s'])
+                            if step_index:
+                                delay = gap_delay(gap_spec, step['gap_s'], f'{repeat}-{job_index}-{step_index}')
+                                gap_total += delay
+                                await asyncio.sleep(delay)
                             previous = prompt + generated
                             prompt = append_step(prompt, generated, step['delta'])
                             prefix_verified &= common_prefix(previous, prompt) == len(previous)
-                            response = await fifo.submit(payload(prompt, step['output']),
-                                dict(label=label, k=k, repeat=repeat, gap_mode=gap_mode,
-                                     task_id=source['task_id'], step=step_index,
-                                     expected_output=step['output'], prefix_verified=prefix_verified))
+                            # The last generated token is usually not yet in KV, hence -1.
+                            reusable = max(0, len(previous) - 1)
+                            response = await fifo.submit(payload(prompt, step['output']), dict(
+                                config, job=job_index, task_id=source['task_id'], step=step_index,
+                                expected_output=step['output'], prefix_verified=prefix_verified,
+                                reusable_tokens=reusable, new_tokens=len(prompt) - reusable))
                             generated = response['tokens']
                             if len(generated) != step['output'] or response.get('truncated'):
                                 raise ValueError('output length mismatch or truncation')
                             total_output += len(generated)
                             done_steps += 1
-                    except Exception as error:
-                        status = type(error).__name__
-                    row = dict(label=label, k=k, repeat=repeat, gap_mode=gap_mode,
-                        task_id=source['task_id'], arrival_s=arrived, done_s=time.perf_counter(),
-                        status=status, steps=done_steps, expected_steps=len(source['steps']),
-                        output_tokens=total_output, prefix_verified=prefix_verified)
+                    except Exception as exc:
+                        status = type(exc).__name__
+                        error = str(exc)[:300]
+                    finally:
+                        if admission:
+                            admission.release()
+                    row = dict(config, job=job_index, task_id=source['task_id'],
+                        arrival_s=arrived, admitted_s=admitted, done_s=time.perf_counter(),
+                        admission_wait_s=admitted - arrived, gap_total_s=gap_total,
+                        status=status, error=error, steps=done_steps,
+                        expected_steps=len(source['steps']), output_tokens=total_output,
+                        expected_output_tokens=sum(s['output'] for s in source['steps']),
+                        max_input_tokens=sum(len(s['delta']) + s['output'] for s in source['steps']) - source['steps'][-1]['output'],
+                        prefix_verified=prefix_verified)
                     row['latency_s'] = row['done_s'] - arrived
+                    row['service_s'] = row['done_s'] - admitted
                     job_log.write(row)
                     return row
-                return await asyncio.gather(*[job(source, arrival)
-                    for source, arrival in zip(workload['tasks'], arrivals)])
-        rows = await measured(label, run)
+                return await asyncio.gather(*[job(i, source, arrival)
+                    for i, (source, arrival) in enumerate(zip(sources, arrivals))])
+        rows = await measured(label, run, results)
         elapsed = max(r['done_s'] for r in rows) - min(r['arrival_s'] for r in rows)
         completed = sum(r['status'] == 'ok' for r in rows)
-        summary = dict(label=label, k=k, repeat=repeat, gap_mode=gap_mode,
-                       tasks=len(rows), completed=completed, makespan_s=elapsed,
-                       jobs_per_minute=completed / elapsed * 60)
+        summary = dict(config, tasks=len(rows), completed=completed, failed=len(rows) - completed,
+                       makespan_s=elapsed, jobs_per_minute=completed / elapsed * 60)
         run_log.write(summary)
         print(json.dumps(summary), flush=True)
 
 
-async def main():
-    parser = argparse.ArgumentParser()
+def int_list(text):
+    return [int(x) for x in text.split(',')]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('suite', choices=['micro', 'cache', 'macro'])
-    parser.add_argument('--workload', help='Use frozen workload without importing or calling tau/DeepSeek')
-    parser.add_argument('--gap-mode', choices=['recorded', 'zero', 'both'], default='recorded')
+    add_results_arg(parser)
+    parser.add_argument('--base-url', default=None, help='Defaults to the running phase1.server port')
     parser.add_argument('--repeats', type=int, default=3)
+    # micro / cache
+    parser.add_argument('--lengths', type=int_list, default=None, help='e.g. 512,2048,4096,8192')
+    parser.add_argument('--outputs', type=int_list, default=[64, 128])
+    parser.add_argument('--k', type=int_list, default=[1, 2], help='Request concurrency list')
+    # macro
+    parser.add_argument('--workload', help='Frozen workload JSON; no tau/DeepSeek needed')
+    parser.add_argument('--live-dir', default='results/raw/live_test')
+    parser.add_argument('--source-count', type=int, default=4, help='0 = all captured tasks')
+    parser.add_argument('--num-jobs', type=int, default=0, help='Jobs per run; default one per source task')
+    parser.add_argument('--jobs-active', type=lambda s: [int(x) for x in s.split(',')], default=[0],
+                        help='Task admission limits J; 0 = unlimited')
+    parser.add_argument('--gap', type=lambda s: s.split(','), default=['recorded'])
+    parser.add_argument('--gap-mode', choices=['recorded', 'zero', 'both'], default=None,
+                        help='Deprecated alias for --gap')
+    parser.add_argument('--arrival', type=lambda s: s.split(','), default=['batch'])
+    parser.add_argument('--steps-limit', type=int, default=0, help='Smoke tests only')
     args = parser.parse_args()
-    async with ModelClient(BASE) as client:
+    if args.gap_mode:
+        args.gap = ['recorded', 'zero'] if args.gap_mode == 'both' else [args.gap_mode]
+    for spec in args.gap:
+        gap_delay(spec, 0.0, 'validate')
+    for spec in args.arrival:
+        arrival_times(spec, 1, 0)
+    results = Path(args.results_dir)
+    (results / 'raw').mkdir(parents=True, exist_ok=True)
+    asyncio.run(run_suite(args, results))
+
+
+async def run_suite(args, results):
+    base = args.base_url or f'http://127.0.0.1:{server_info().get("port", 18080)}'
+    async with ModelClient(base) as client:
+        server = await server_config(client)
+        Jsonl(results / 'raw/runs_meta.jsonl').write(dict(
+            suite=args.suite, started_unix=time.time(), git_commit=git_commit(),
+            args=vars(args), server=server, server_command=server_info().get('command')))
         # Warm up the compute path; individual suites reset their cache state.
         await client.complete(payload('Warm up the model.', 16))
         if args.suite == 'micro':
-            await micro(client)
+            await micro(client, results, args.lengths or [512, 2048, 4096], args.outputs,
+                        args.k, args.repeats, server['P'])
         elif args.suite == 'cache':
-            await cache_bench(client)
+            await cache_bench(client, results, args.lengths or [2048, 4096], args.repeats, server['P'])
         else:
-            await macro(client, gaps=None if args.gap_mode == 'both' else [args.gap_mode],
-                        workload_path=args.workload, repeats=args.repeats)
+            await macro(client, results, args, server)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()

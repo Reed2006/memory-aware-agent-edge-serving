@@ -9,3 +9,5 @@ third_party/
 results/cache/
 .DS_Store
 artifacts/
+.server.json
+runs/*/cache/
