@@ -8,60 +8,60 @@ j                                    0              0              1          0 
 gap_mode                 lognormal:2:1  lognormal:2:1  lognormal:2:1   fixed:15  lognormal:2:1  lognormal:2:1  lognormal:2:1       zero  lognormal:2:1  lognormal:2:1               lognormal:2:1   
 arrival                      poisson:1      poisson:1      poisson:1  poisson:1    poisson:0.5      poisson:1      poisson:2  poisson:1      poisson:1      poisson:1                   poisson:1   
 steps_limit                          0              0              0          0              0              0              0          0              0              0                           0   
-runs                                 1              1              1          1              1              1              1          1              1              1                           1   
-submitted                            8              8              8          8              8              8              8          8              8              8                           8   
-completed                            8              8              8          8              8              8              8          8              8              8                           3   
-failed                               0              0              0          0              0              0              0          0              0              0                           5   
+runs                                 3              3              3          2              2              3              2          2              3              3                           3   
+submitted                           24             24             24         16             16             24             16         16             24             24                          24   
+completed                           24             24             24         16             16             24             16         16             24             24                          10   
+failed                               0              0              0          0              0              0              0          0              0              0                          14   
 failure_types                                                                                                                                                          HTTPStatusError;ValueError   
-jobs_per_min_mean                0.617          0.507           0.83      0.499          0.437           0.82          0.582       0.69          0.843          0.661                       0.346   
-jobs_per_min_sd                    NaN            NaN            NaN        NaN            NaN            NaN            NaN        NaN            NaN            NaN                         NaN   
-p50_s                          254.514        352.143        134.942    463.591        102.765        157.815        307.363    243.743        113.544        274.265                       30.47   
-p95_s                          393.653        609.382        151.625     645.27        160.099         291.86         606.27    424.393        181.857        434.092                      30.883   
-p99_s                           402.31        637.943        151.628    683.268        179.018        292.374        616.749    435.261        190.377          464.6                       30.92   
-admission_wait_mean_s              0.0            0.0         56.664        0.0            0.0            0.0            0.0        0.0         19.334            0.0                         0.0   
-fifo_wait_mean_s                 9.861         18.458            0.0      8.602            0.0           3.26         12.004       7.73            0.0          7.823                         0.0   
-fifo_wait_p95_s                 28.517         45.068            0.0     43.568            0.0         22.182          31.15     28.815            0.0         28.732                         0.0   
-prefill_tokens                105041.0       106367.0        20230.0    96222.0        27594.0        47804.0        93078.0    76113.0        26123.0        81993.0                     20265.0   
-wasted_prefill_tokens          84815.0        86145.0            0.0    71110.0         7367.0        22688.0        67962.0    50994.0         5898.0        61772.0                         0.0   
-wasted_prefill_fraction          0.807           0.81            0.0      0.739          0.267          0.475           0.73       0.67          0.226          0.753                         0.0   
-full_history_hit_rate            0.136          0.099            1.0      0.185          0.951          0.691           0.21      0.395          0.963          0.321                         1.0   
-slowdown_mean                    3.734          5.566          3.611      2.247          1.251          3.022           5.65      8.742          2.927          4.908                       1.736   
-slowdown_p95                     4.901          7.556         10.847      2.852           1.63          5.461          7.323     14.239          9.029          7.482                       2.976   
-slowdown_max                     5.337          7.758         13.869      3.001          1.671          6.323          7.541     14.456         12.874          7.888                       3.188   
-jain_1_over_slowdown             0.887          0.836          0.746      0.954          0.967           0.81          0.661      0.711          0.861          0.873                       0.849   
-slowdown_long_mean                3.29          5.015          1.202      2.213          1.212          1.941          5.151      5.629           1.31          3.412                         NaN   
-slowdown_short_mean              4.178          6.117           6.02       2.28           1.29          4.102          6.149     11.855          4.545          6.404                       1.736   
+jobs_per_min_mean                0.483           0.45          0.677      0.456          0.467          0.587          0.801      0.603          0.736          0.532                       0.424   
+jobs_per_min_sd                  0.116          0.051          0.197      0.061          0.043          0.203          0.309      0.122          0.228          0.113                       0.205   
+p50_s                          254.514        274.477        141.142    342.627         98.391        172.913        204.987    135.739        151.061        221.862                      30.451   
+p95_s                          984.573        981.566        400.417    590.986        215.255        918.645        591.299    408.868        346.499        928.419                     117.201   
+p99_s                         1029.561       1026.667        445.451    672.412        215.514         947.85        613.755    432.156        376.259        958.016                     148.015   
+admission_wait_mean_s              0.0            0.0        100.754        0.0            0.0            0.0            0.0        0.0         51.874            0.0                         0.0   
+fifo_wait_mean_s                18.743         21.637            0.0      5.047          0.047         10.455          6.637      4.431            0.0         12.297                       0.523   
+fifo_wait_p95_s                 78.154         78.098            0.0      39.43            0.0         54.467         27.521     25.589            0.0         55.774                       1.609   
+prefill_tokens                282696.0       283711.0        55723.0   133759.0        61287.0       187163.0       119205.0   103587.0        75423.0       223255.0                     68206.0   
+wasted_prefill_tokens         226975.0       227994.0            0.0    92941.0        25355.0       116771.0        73490.0    57869.0        14821.0       162652.0                     10552.0   
+wasted_prefill_fraction          0.803          0.804            0.0      0.695          0.414          0.624          0.617      0.559          0.197          0.729                       0.155   
+full_history_hit_rate            0.238          0.225            1.0      0.404          0.925          0.551          0.514      0.637          0.956          0.414                       0.877   
+slowdown_mean                    4.608          5.151          7.486      1.756          1.342          3.981          3.771      6.049          5.532          4.704                       4.052   
+slowdown_p95                    11.074          11.04         37.209      2.639          1.994          9.524          7.073     13.992         31.558          9.629                      11.753   
+slowdown_max                    14.243         14.987         61.183      3.001           2.99         12.808          7.541     14.456         35.601          13.51                      14.368   
+jain_1_over_slowdown               0.7          0.645          0.694      0.886          0.947          0.663          0.712      0.552          0.754          0.588                       0.684   
+slowdown_long_mean               4.213          4.566          1.527      1.619          1.331          3.474          2.755      2.929          1.561          3.876                         NaN   
+slowdown_short_mean              4.942          5.645         12.528      1.862          1.351          4.409          4.562      8.475          8.893          5.405                       4.052   
 
-                                      11  
-P                                      4  
-ctx_size                           24576  
-kv_unified                          True  
-cache_ram_mib                          0  
-k                                      4  
-j                                      0  
-gap_mode                   lognormal:2:1  
-arrival                        poisson:1  
-steps_limit                            0  
-runs                                   1  
-submitted                              8  
-completed                              4  
-failed                                 4  
-failure_types            HTTPStatusError  
-jobs_per_min_mean                  0.408  
-jobs_per_min_sd                      NaN  
-p50_s                             77.013  
-p95_s                            120.212  
-p99_s                            122.298  
-admission_wait_mean_s                0.0  
-fifo_wait_mean_s                     0.0  
-fifo_wait_p95_s                      0.0  
-prefill_tokens                   36321.0  
-wasted_prefill_tokens             6138.0  
-wasted_prefill_fraction            0.169  
-full_history_hit_rate              0.983  
-slowdown_mean                      2.122  
-slowdown_p95                       3.898  
-slowdown_max                       4.317  
-jain_1_over_slowdown               0.882  
-slowdown_long_mean                 1.325  
-slowdown_short_mean                2.918  
+                                      11                          12  
+P                                      4                           4  
+ctx_size                           24576                       36864  
+kv_unified                          True                       False  
+cache_ram_mib                          0                           0  
+k                                      4                           4  
+j                                      0                           0  
+gap_mode                   lognormal:2:1               lognormal:2:1  
+arrival                        poisson:1                   poisson:1  
+steps_limit                            0                           0  
+runs                                   3                           2  
+submitted                             24                          16  
+completed                             16                          13  
+failed                                 8                           3  
+failure_types            HTTPStatusError  HTTPStatusError;ValueError  
+jobs_per_min_mean                  0.465                       0.528  
+jobs_per_min_sd                    0.052                       0.141  
+p50_s                             88.907                       37.92  
+p95_s                            258.437                     195.224  
+p99_s                            279.421                     210.079  
+admission_wait_mean_s                0.0                         0.0  
+fifo_wait_mean_s                   1.628                         0.0  
+fifo_wait_p95_s                   14.118                         0.0  
+prefill_tokens                  116174.0                     52890.0  
+wasted_prefill_tokens            39721.0                      3529.0  
+wasted_prefill_fraction            0.342                       0.067  
+full_history_hit_rate              0.803                       0.979  
+slowdown_mean                      3.806                       1.506  
+slowdown_p95                      11.377                       3.235  
+slowdown_max                       14.83                       3.495  
+jain_1_over_slowdown               0.729                       0.912  
+slowdown_long_mean                 1.248                       1.158  
+slowdown_short_mean                5.341                       1.724  

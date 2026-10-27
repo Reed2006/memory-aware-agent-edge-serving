@@ -1,6 +1,6 @@
 # Phase 1 Report — Memory-Aware Agent Edge Serving (Option 1)
 
-_Generated 2026-10-26T09:55 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
+_Generated 2026-10-26T21:23 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
 
 ## 1. Question and baseline
 
@@ -19,7 +19,7 @@ The baseline is a FIFO queue with fixed concurrency K in front of one llama-serv
 | Agent benchmark | τ²-bench v1.0.1 Retail (official tools, orchestrator, ENV evaluator) |
 | User simulator | DeepSeek V4 flash (`deepseek-flash`), live capture only; never called during timed replays |
 | Power during runs | Now drawing from 'AC Power'; Now drawing from 'Battery Power' |
-| Code commit(s) | 7a489316, b51b99e1 |
+| Code commit(s) | 0d53ae07, 7a489316, b51b99e1 |
 
 
 ## 3. Workloads (micro → macro)
@@ -82,42 +82,45 @@ Restore correctness: after save → overwrite → restore, 64 greedy tokens iden
 
 | config | repeats | completed | tasks/min | P50 s | P95 s | wasted prefill | history hit | mean slowdown |
 |---|---|---|---|---|---|---|---|---|
-| P1·24K K1 J∞ | 1 | 8/8 | 0.617 ± n/a | 255 | 394 | 80.7% | 13.6% | 3.70 |
-| P2·24K K1 J1 | 2 | 16/16 | 0.642 ± 0.265 | 130 | 201 | 0.0% | 100.0% | 6.71 |
-| P2·24K K1 J∞ | 1 | 8/8 | 0.507 ± n/a | 352 | 609 | 81.0% | 9.9% | 5.52 |
-| P2·24K K2 J2 | 1 | 8/8 | 0.843 ± n/a | 114 | 182 | 22.6% | 96.3% | 2.93 |
-| P2·24K K2 J∞ | 2 | 16/16 | 0.654 ± 0.235 | 104 | 246 | 28.8% | 83.0% | 2.16 |
-| P2·24K+RAM3G K2 J∞ | 1 | 8/8 | 0.661 ± n/a | 274 | 434 | 75.3% | 32.1% | 4.88 |
-| P4·24K K4 J∞ | 1 | 3/8 | 0.346 ± n/a | 30 | 31 | 0.0% | 100.0% | 1.74 |
-| P4u·24K K4 J∞ | 1 | 4/8 | 0.408 ± n/a | 77 | 120 | 16.9% | 98.3% | 2.10 |
+| P1·24K K1 J∞ | 3 | 24/24 | 0.483 ± 0.116 | 382 | 575 | 78.0% | 26.4% | 4.61 |
+| P2·24K K1 J1 | 3 | 24/24 | 0.677 ± 0.197 | 174 | 280 | 0.0% | 100.0% | 7.49 |
+| P2·24K K1 J∞ | 3 | 24/24 | 0.450 ± 0.051 | 412 | 638 | 78.0% | 25.1% | 5.15 |
+| P2·24K K2 J2 | 3 | 24/24 | 0.736 ± 0.228 | 152 | 256 | 20.0% | 95.7% | 5.53 |
+| P2·24K K2 J∞ | 3 | 24/24 | 0.587 ± 0.203 | 318 | 479 | 45.4% | 57.8% | 3.98 |
+| P2·24K+RAM3G K2 J∞ | 3 | 24/24 | 0.532 ± 0.113 | 363 | 532 | 63.6% | 45.0% | 4.70 |
+| P4·24K K4 J∞ | 3 | 10/24 | 0.424 ± 0.205 | 38 | 68 | 15.6% | 87.5% | 4.23 |
+| P4·36K K4 J∞ | 2 | 13/16 | 0.528 ± 0.141 | 50 | 169 | 7.1% | 97.8% | 1.52 |
+| P4u·24K K4 J∞ | 3 | 16/24 | 0.465 ± 0.052 | 111 | 203 | 31.5% | 77.3% | 4.42 |
 
 
 Highest completed-task throughput on the eval workload: **P2·24K K2 J2**. (Phase 2 must re-select the best fixed baseline on the dev workload; this ranking is descriptive.)
 
-Failures (9 tasks across all runs) are kept in the denominators. Reasons seen: Context size has been exceeded.; request (N tokens) exceeds the available context size (N tokens), try increasing it.
+Failures (25 tasks across all runs) are kept in the denominators. Reasons seen: Context size has been exceeded.; request (N tokens) exceeds the available context size (N tokens), try increasing it.
 
 Mean time per completed task (F5):
 
 | config | admission wait | FIFO wait | model round trip | tool delay | total |
 |---|---|---|---|---|---|
-| P1·24K K1 J∞ | 0 | 110 | 91 | 33 | 234 |
-| P2·24K K1 J1 | 58 | 0 | 36 | 35 | 128 |
-| P2·24K K1 J∞ | 0 | 205 | 114 | 33 | 352 |
-| P2·24K K2 J2 | 19 | 0 | 61 | 33 | 113 |
-| P2·24K K2 J∞ | 0 | 18 | 77 | 35 | 130 |
-| P2·24K+RAM3G K2 J∞ | 0 | 87 | 159 | 33 | 279 |
-| P4·24K K4 J∞ | 0 | 0 | 21 | 10 | 31 |
-| P4u·24K K4 J∞ | 0 | 0 | 55 | 25 | 80 |
+| P1·24K K1 J∞ | 0 | 196 | 100 | 34 | 330 |
+| P2·24K K1 J1 | 101 | 0 | 40 | 34 | 175 |
+| P2·24K K1 J∞ | 0 | 226 | 106 | 34 | 367 |
+| P2·24K K2 J2 | 52 | 0 | 70 | 34 | 156 |
+| P2·24K K2 J∞ | 0 | 109 | 136 | 34 | 280 |
+| P2·24K+RAM3G K2 J∞ | 0 | 129 | 156 | 34 | 319 |
+| P4·24K K4 J∞ | 0 | 3 | 35 | 7 | 45 |
+| P4·36K K4 J∞ | 0 | 0 | 45 | 31 | 75 |
+| P4u·24K K4 J∞ | 0 | 9 | 77 | 29 | 115 |
 
 
 ### 4.4 Memory (F7)
 
 | server | theoretical KV GiB | peak server RSS GiB | min system available GiB |
 |---|---|---|---|
-| P1·24K | 3.38 | 3.57 | 1.86 |
-| P2·24K | 3.38 | 3.61 | 2.10 |
-| P2·24K+RAM3G | 3.38 | 3.59 | 2.20 |
-| P4·24K | 3.38 | 3.57 | 2.18 |
+| P1·24K | 3.38 | 3.59 | 1.86 |
+| P2·24K | 3.38 | 3.61 | 1.86 |
+| P2·24K+RAM3G | 3.38 | 3.59 | 1.97 |
+| P4·24K | 3.38 | 3.58 | 2.18 |
+| P4·36K | 5.06 | 5.21 | 2.14 |
 | P4u·24K | 3.38 | 3.61 | 2.16 |
 
 
@@ -127,37 +130,48 @@ llama-server preallocates the whole KV pool at start, so resident memory is set 
 
 | tool delay | tasks/min | P50 s | P95 s | wasted prefill | history hit | slowdown |
 |---|---|---|---|---|---|---|
-| zero | 0.690 | 244 | 424 | 67.0% | 39.5% | 8.66 |
-| lognormal:2:1 | 0.654 | 104 | 246 | 28.8% | 83.0% | 2.16 |
-| fixed:15 | 0.499 | 464 | 645 | 73.9% | 18.5% | 2.24 |
+| zero | 0.603 | 147 | 289 | 46.0% | 66.7% | 6.05 |
+| lognormal:2:1 | 0.587 | 318 | 479 | 45.4% | 57.8% | 3.98 |
+| fixed:15 | 0.456 | 323 | 510 | 66.0% | 43.1% | 1.76 |
 
 
 ### 4.6 Arrival rate (F11)
 
 | arrival | tasks/min | P50 s | P95 s | wasted prefill | history hit | slowdown |
 |---|---|---|---|---|---|---|
-| poisson:0.5 | 0.437 | 103 | 160 | 26.7% | 95.1% | 1.24 |
-| poisson:1 | 0.654 | 104 | 246 | 28.8% | 83.0% | 2.16 |
-| poisson:2 | 0.582 | 307 | 606 | 73.0% | 21.0% | 5.60 |
+| poisson:0.5 | 0.467 | 81 | 188 | 40.0% | 92.1% | 1.34 |
+| poisson:1 | 0.587 | 318 | 479 | 45.4% | 57.8% | 3.98 |
+| poisson:2 | 0.801 | 185 | 416 | 47.1% | 55.1% | 3.77 |
 
 
 ### 4.7 Fairness (F8)
 
 | config | short-task slowdown | long-task slowdown |
 |---|---|---|
-| P1·24K K1 J∞ | 4.18 | 3.22 |
-| P2·24K K1 J1 | 12.19 | 1.23 |
-| P2·24K K1 J∞ | 6.12 | 4.91 |
-| P2·24K K2 J2 | 4.56 | 1.29 |
-| P2·24K K2 J∞ | 2.78 | 1.54 |
-| P2·24K+RAM3G K2 J∞ | 6.41 | 3.35 |
-| P4·24K K4 J∞ | 1.74 | n/a |
-| P4u·24K K4 J∞ | 2.93 | 1.28 |
+| P1·24K K1 J∞ | 5.01 | 4.20 |
+| P2·24K K1 J1 | 13.44 | 1.53 |
+| P2·24K K1 J∞ | 5.57 | 4.73 |
+| P2·24K K2 J2 | 9.50 | 1.57 |
+| P2·24K K2 J∞ | 4.53 | 3.43 |
+| P2·24K+RAM3G K2 J∞ | 5.46 | 3.95 |
+| P4·24K K4 J∞ | 4.05 | n/a |
+| P4·36K K4 J∞ | 1.72 | 1.16 |
+| P4u·24K K4 J∞ | 5.34 | 1.25 |
+
+
+### 4.8 Dev workload (for Phase 2 baseline selection)
+
+| P | K | J | tasks/min | runs |
+|---|---|---|---|---|
+| 2.0 | 1.0 | ∞ | 0.437 | 1.0 |
+| 2.0 | 1.0 | 2.0 | 0.425 | 1.0 |
+| 2.0 | 2.0 | ∞ | 0.453 | 1.0 |
+| 2.0 | 2.0 | 2.0 | 0.914 | 1.0 |
 
 
 ## 5. Dominant bottleneck
 
-Across baselines the share of prefill spent recomputing history ranges from 0.0% (P2·24K K1 J1) to 81.0% (P2·24K K1 J∞); full-history hit rates range 10%–100%. Across configurations, wasted-prefill share and completed tasks/min correlate at r = 0.17. Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long Retail histories), fewer slots means agents evict one another's histories while their tools run.
+Across baselines the share of prefill spent recomputing history ranges from 0.0% (P2·24K K1 J1) to 78.0% (P2·24K K1 J∞); full-history hit rates range 25%–100%. Across configurations, wasted-prefill share and completed tasks/min correlate at r = -0.43. Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long Retail histories), fewer slots means agents evict one another's histories while their tools run.
 
 
 ## 6. Phase 2 direction

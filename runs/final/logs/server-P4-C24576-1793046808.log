@@ -1,0 +1,19 @@
+0.00.079.583 W Setting 'enable_thinking' via --chat-template-kwargs is deprecated. Use --reasoning on / --reasoning off instead.
+0.00.079.673 I srv  llama_server: initializing ...
+0.00.079.677 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.079.932 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.081.368 I srv    load_model: loading model '/Users/air/Documents/26 Fall/CSE291A/PJ/models/Qwen3-4B-Q4_K_M.gguf'
+0.00.161.757 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.00.478.281 I cmn          init: llama threadpool init, n_threads = 4
+0.00.762.843 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 6144, kv_unified = 'false'
+0.00.769.545 I srv  llama_server: model loaded
+0.00.769.547 I srv  llama_server: listening on http://127.0.0.1:18080
+0.01.203.325 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
+0.01.203.336 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.01.739.285 I slot print_timing: id  0 | task 0 | prompt eval time =      70.70 ms /     5 tokens (   14.14 ms per token,    70.72 tokens per second)
+0.01.739.290 I slot print_timing: id  0 | task 0 |        eval time =     465.23 ms /    16 tokens (   31.02 ms per token,    32.24 tokens per second)
+0.01.739.290 I slot print_timing: id  0 | task 0 |       total time =     535.93 ms /    21 tokens
+0.01.739.291 I slot print_timing: id  0 | task 0 |    graphs reused =         15
+0.01.739.292 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+0.01.739.312 I slot      release: id  0 | task 0 | stop processing: n_tokens = 20, truncated = 0
+0.03.901.323 I srv    operator(): operator(): cleaning up before exit...
