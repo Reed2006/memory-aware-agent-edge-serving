@@ -344,6 +344,9 @@ def sweep_subset(macro, column, values):
     other = 'arrival' if column == 'gap_mode' else 'gap_mode'
     fixed = MAIN_ARRIVAL if column == 'gap_mode' else MAIN_GAP
     sub = base[(base[other] == fixed) & base[column].isin(values)]
+    # Repeats draw different task mixes, so compare only repeats that every value has.
+    shared = set.intersection(*(set(g.repeat) for _, g in sub.groupby(column))) if not sub.empty else set()
+    sub = sub[sub.repeat.isin(shared)]
     return sub if sub[column].nunique() > 1 else pd.DataFrame()
 
 
@@ -432,6 +435,19 @@ def meta():
     return rows
 
 
+def power_text(meta_rows):
+    states = meta_rows.get('power', pd.Series(dtype=str)).dropna().str.split('\n').str[0]
+    if states.empty:
+        return 'not recorded'
+    ac, battery = states.str.contains('AC Power').sum(), states.str.contains('Battery Power').sum()
+    text = f'AC power for {ac} of {len(states)} recorded launches'
+    if battery and (ROOT / 'raw/interrupted').exists():
+        text += f'; the {battery} battery launch was the run stopped by hand, quarantined in `raw/interrupted/` and re-run on AC'
+    elif battery:
+        text += f'; {battery} on battery'
+    return text
+
+
 def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness):
     lines = []
     add = lines.append
@@ -458,7 +474,7 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
         ['KV budget', '--ctx-size tokens in total; partitioned per slot unless "u" (unified pool); f16 KV = 144 KiB/token'],
         ['Agent benchmark', 'τ²-bench v1.0.1 Retail (official tools, orchestrator, ENV evaluator)'],
         ['User simulator', 'DeepSeek V4 flash (`deepseek-flash`), live capture only; never called during timed replays'],
-        ['Power during runs', '; '.join(power) or 'not recorded'],
+        ['Power during runs', power_text(meta_rows)],
         ['Code commit(s)', ', '.join(c[:8] for c in commits) or 'n/a'],
     ]))
     add('\n## 3. Workloads (micro → macro)\n')
@@ -525,6 +541,23 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
                                  fmt(r.wasted_frac.mean() * 100, 1, '%'), fmt(r.hit_rate.mean() * 100, 1, '%'),
                                  fmt(r.slowdown.mean(), 2)])
             add(table(['config', 'repeats', 'completed', 'tasks/min', 'P50 s', 'P95 s', 'wasted prefill', 'history hit', 'mean slowdown'], rows_out))
+            add('\nTasks/min is mean ± SD across repeats; P50/P95, wasted prefill and hit rate are means of per-run values. '
+                'Latency is over completed tasks only, so configurations with failures (P4) look faster than they are: '
+                'the tasks that fail are the long ones.\n')
+            pivot, ratio = paired_throughput(main)
+            if ratio is not None:
+                mix = repeat_mix(main)
+                cols = list(pivot.columns)
+                add(f'**Repeats are paired, not noise.** Each repeat index draws a different seeded mix of 8 tasks, and every '
+                    'configuration sees the same mix for the same index. The SD above is therefore mostly workload '
+                    f'variation: FIFO P2 K2 J∞ has a median completion time of '
+                    + ', '.join(f'{fmt(mix.get(c), 0)} s in R{c}' for c in cols) +
+                    '. Throughput per repeat, and relative to FIFO P2 K2 J∞ on the same tasks:\n')
+                add(table(['config'] + [f'R{c} tasks/min' for c in cols] + [f'R{c} vs FIFO' for c in cols],
+                          [[c] + [fmt(pivot.loc[c, r], 3) for r in cols] + [fmt(ratio.loc[c, r], 2, '×') for r in cols]
+                           for c in pivot.index]))
+                add('\nLimiting active tasks (J = P) wins only when histories are long (R0, R2) and is neutral on short tasks (R1). '
+                    'Throughput also counts completed tasks only: P4·24K looks fast in R2 because its long tasks failed early.\n')
             best = main.groupby('config').jobs_per_min.mean().idxmax()
             add(f'\nHighest completed-task throughput on the eval workload: **{best}**. (Phase 2 must re-select the best fixed '
                 'baseline on the dev workload; this ranking is descriptive.)\n')
@@ -550,36 +583,72 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
             add(table(['tool delay', 'tasks/min', 'P50 s', 'P95 s', 'wasted prefill', 'history hit', 'slowdown'],
                       [[i, fmt(r.jobs_per_min, 3), fmt(r.p50, 0), fmt(r.p95, 0), fmt(r.wasted_frac * 100, 1, '%'), fmt(r.hit_rate * 100, 1, '%'), fmt(r.slowdown, 2)]
                        for i, r in gap_tab.iterrows()]))
+            add('\nCompared on the repeats every delay has. Only a long fixed idle time (15 s) clearly raises eviction and '
+                'lowers throughput; the gap between no delay and log-normal delay is within repeat-to-repeat variation.\n')
         if arrival_tab is not None:
             add('\n### 4.6 Arrival rate (F11)\n')
             add(table(['arrival', 'tasks/min', 'P50 s', 'P95 s', 'wasted prefill', 'history hit', 'slowdown'],
                       [[i, fmt(r.jobs_per_min, 3), fmt(r.p50, 0), fmt(r.p95, 0), fmt(r.wasted_frac * 100, 1, '%'), fmt(r.hit_rate * 100, 1, '%'), fmt(r.slowdown, 2)]
                        for i, r in arrival_tab.iterrows()]))
+            add('\nCompared on the repeats every rate has. The lowest rate (0.5/min) gives the best fairness and hit rate; '
+                'between 1 and 2/min, throughput rises with offered load while P95 latency and eviction grow.\n')
         if fairness is not None:
             add('\n### 4.7 Fairness (F8)\n')
             add(table(['config', 'short-task slowdown', 'long-task slowdown'],
                       [[c, fmt(r.get('short', np.nan), 2), fmt(r.get('long', np.nan), 2)] for c, r in fairness.iterrows()]))
         dev = ROOT.parent / (ROOT.name + '-dev')
         if (dev / 'raw/macro_runs.jsonl').exists():
-            d = pd.DataFrame([json.loads(s) for s in (dev / 'raw/macro_runs.jsonl').read_text().splitlines() if s])
-            g = d.groupby(['P', 'k', 'j']).jobs_per_minute.agg(['mean', 'count']).reset_index()
+            summarize(dev)
+            d = pd.read_csv(dev / 'summary/sweep_summary.csv')
+            d['j'] = d['j'].fillna(0).astype(int)
             add('\n### 4.8 Dev workload (for Phase 2 baseline selection)\n')
-            add(table(['P', 'K', 'J', 'tasks/min', 'runs'], [[r.P, r.k, r.j or '∞', fmt(r['mean'], 3), r['count']] for _, r in g.iterrows()]))
+            add(table(['P', 'K', 'J', 'runs', 'completed', 'tasks/min', 'P95 s', 'wasted prefill', 'history hit'],
+                      [[int(r.P), int(r.k), int(r.j) or '∞', int(r.runs), f'{int(r.completed)}/{int(r.submitted)}',
+                        fmt(r.jobs_per_min_mean, 3), fmt(r.p95_s, 0), fmt(r.wasted_prefill_fraction * 100, 1, '%'),
+                        fmt(r.full_history_hit_rate * 100, 1, '%')] for r in d.itertuples()]))
+            add('\nOn the dev tasks the best fixed baseline is again P2 K2 J2 (J = number of slots). '
+                'K1 J2 gains nothing over K1 J∞; §4.9 explains why.\n')
+        slots = section(slot_use)(macro)
+        if slots is not None:
+            tab, prefix = slots
+            add('\n### 4.9 How llama.cpp assigns slots (P = 2)\n')
+            add(table(['K', 'J', 'requests', 'share on busiest slot', 'full-history hit', 'misses that kept only the shared prefix'],
+                      [[int(r.k), int(r.j) or '∞', int(r.requests), fmt(r.busiest_slot * 100, 0, '%'), fmt(r.hit * 100, 1, '%'),
+                        fmt(r.prefix_only * 100, 0, '%')] for r in tab.itertuples()]))
+            add(f'\nAll Retail tasks start with the same {prefix:,}-token system prompt and tool schema. llama.cpp picks the idle '
+                'slot whose cached prompt shares the longest prefix with the new request, and with one request in flight '
+                '(K = 1) every slot is idle, so it keeps choosing the same slot: **with K = 1 the second slot is never used**, '
+                'and P2 K1 behaves like P1 K1. Two active tasks (J = 2) then overwrite each other in one slot while the other '
+                'stays empty. When a history is lost, the shared prefix survives and only the task-specific part is recomputed. '
+                'Slot choice is not agent-aware: pinning each task to a slot (`id_slot`) is a cheap first step for Phase 2.\n')
         add('\n## 5. Dominant bottleneck\n')
         add(bottleneck_text(macro, micro, cache))
     add('\n## 6. Phase 2 direction\n')
     add('Phase 1 shows that, at a fixed KV budget, the cost that FIFO fails to control is **history eviction followed by '
-        're-prefill**, which grows with context length and with the number of agent tasks that share the slots. The Phase 2 '
-        'mechanism is therefore a memory-aware admission and retention policy: (1) admit new agent tasks only while the KV '
-        'budget can hold their growing context (estimated from observed growth), (2) give ready continuations priority '
-        'with slot affinity, with aging to protect long tasks, and (3) when a tool is slow, decide between keeping the slot, '
-        'saving its state to SSD (measured above) or evicting it. Required baselines: FIFO, the best fixed K/J selected on '
-        'the dev workload, and llama.cpp\'s built-in host prompt cache (`--cache-ram`) as the simple fixed cache policy; '
-        'plus queue-only and cache-only ablations, policy overhead, and low-load / zero-delay cases where little benefit is expected.\n')
+        're-prefill**, which grows with context length and with the number of agent tasks that share the slots. Four '
+        'findings shape Phase 2:\n\n'
+        '1. **A fixed task limit J = P is already a strong baseline** (best on eval and dev, up to ~2× FIFO on long tasks). '
+        'Phase 2 has to beat it, not FIFO.\n'
+        '2. **That baseline is unfair to short tasks**: they wait for admission behind long ones (§4.7). A policy that '
+        'admits by predicted KV footprint and remaining steps can keep J\'s cache hits while cutting short-task slowdown.\n'
+        '3. **Slot placement is not agent-aware** (§4.9): with one request in flight llama.cpp reuses one slot and leaves '
+        'the other empty. Slot affinity per task is required.\n'
+        '4. **Simple fixed caching does not help**: llama.cpp\'s host prompt cache (`--cache-ram 3072`) is no better than '
+        'none on the same tasks, while SSD save/restore of one slot costs < 1 s against 44 s to re-prefill 8K tokens '
+        '(§4.2). Per-slot capacity, not slot count, decides whether long tasks fit (P4 fails at 6K per slot, mostly '
+        'recovers at 9K).\n\n'
+        'The Phase 2 mechanism is therefore a memory-aware admission and retention policy: (1) admit new agent tasks only '
+        'while the KV budget can hold their growing context (estimated from observed growth), (2) give ready continuations '
+        'priority with slot affinity, with aging so neither short nor long tasks starve, and (3) when a tool is slow, decide '
+        'between keeping the slot, saving its state to SSD or evicting it. Required baselines: FIFO, the best fixed K/J '
+        'selected on the dev workload (P2 K2 J2), and `--cache-ram` as the simple fixed cache policy; plus queue-only and '
+        'cache-only ablations, policy overhead, and low-load / zero-delay cases where little benefit is expected.\n')
     add('## 7. Limitations\n')
     add('- Replay is append-only and benchmark-derived, not a byte-faithful trace; it does not re-execute customer-service semantics. '
         'Completion means "all recorded steps executed", not task success.\n'
-        '- Small number of tasks per run and few repeats; P95/P99 are descriptive. Error bars are SD across repeats.\n'
+        '- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. '
+        'Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3).\n'
+        '- Latency of configurations with failures is over completed tasks only.\n'
         '- One laptop: thermal state and background processes are not fully controlled; RSS under-counts Metal allocations.\n'
         '- The 600 s per-request HTTP deadline is a client limit, not a production SLO.\n'
         '- The user simulator is DeepSeek, not TritonAI; it only shapes the captured trajectories.\n')
@@ -590,6 +659,52 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
     if NOTES:
         add('\n## Generation notes\n' + '\n'.join(f'- {n}' for n in NOTES))
     (ROOT / 'PHASE1_REPORT.md').write_text('\n'.join(lines))
+
+
+REF_CONFIG = 'P2·24K K2 J∞'
+
+
+def paired_throughput(main):
+    """Tasks/min per repeat (each repeat is a different seeded task mix) and the ratio to FIFO P2 K2 J∞ in the same repeat."""
+    pivot = main.pivot_table(index='config', columns='repeat', values='jobs_per_min').reindex(order_configs(main.config))
+    if REF_CONFIG not in pivot.index:
+        return pivot, None
+    ratio = pivot.div(pivot.loc[REF_CONFIG], axis=1)
+    return pivot, ratio
+
+
+def repeat_mix(main):
+    """Median completion time of the reference config per repeat, as a proxy for how long that repeat's tasks are."""
+    ref = main[main.config == REF_CONFIG].set_index('repeat')
+    return ref.p50.round(0).to_dict()
+
+
+def shared_prefix_tokens():
+    path = ROOT / 'workload_eval.json'
+    if not path.exists():
+        return None
+    firsts = [t['steps'][0]['delta'] for t in json.loads(path.read_text())['tasks']]
+    n = 0
+    while all(len(f) > n for f in firsts) and len({f[n] for f in firsts}) == 1:
+        n += 1
+    return n
+
+
+def slot_use(macro):
+    """Share of requests on the busiest slot, and misses that kept only the prefix shared by all tasks."""
+    req = macro['requests']
+    req = req[(req.P == 2) & (req.status == 'ok') & req.slot.notna()]
+    if req.empty:
+        return None
+    prefix = shared_prefix_tokens() or 0
+    rows = []
+    for (k, j), g in req.groupby(['k', 'j']):
+        busiest = g.groupby('label').slot.agg(lambda s: s.value_counts(normalize=True).iloc[0]).mean()
+        miss = g[g.full_history_hit == 0]
+        rows.append(dict(k=k, j=j, requests=len(g), busiest_slot=busiest,
+                         hit=g.full_history_hit.mean(),
+                         prefix_only=(miss.cache_n <= prefix + 64).mean() if len(miss) else np.nan))
+    return pd.DataFrame(rows), prefix
 
 
 def bottleneck_text(macro, micro, cache):
@@ -604,9 +719,20 @@ def bottleneck_text(macro, micro, cache):
             f'{fmt(g.hit_rate.min() * 100, 0, "%")}–{fmt(g.hit_rate.max() * 100, 0, "%")}. ')
     if np.isfinite(corr):
         text += f'Across configurations, wasted-prefill share and completed tasks/min correlate at r = {corr:.2f}. '
+    pivot, ratio = paired_throughput(main)
+    limited = [c for c in ['P2·24K K2 J2', 'P2·24K K1 J1'] if ratio is not None and c in ratio.index]
+    if limited:
+        c = limited[0]
+        mix = repeat_mix(main)
+        longest, shortest = max(mix, key=mix.get), min(mix, key=mix.get)
+        text += (f'The paired comparison is clearer: on the same tasks, {c} reaches {fmt(ratio.loc[c, longest], 2, "×")} the '
+                 f'throughput of FIFO P2 K2 J∞ in the long-task repeat R{longest} but only {fmt(ratio.loc[c, shortest], 2, "×")} '
+                 f'in the short-task repeat R{shortest}. Removing eviction pays off in proportion to how much history there is '
+                 'to lose. ')
     text += ('Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the '
              'number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long '
-             'Retail histories), fewer slots means agents evict one another\'s histories while their tools run.\n')
+             'Retail histories), fewer slots means agents evict one another\'s histories while their tools run. Raising the '
+             'budget from 24K to 36K tokens at P4 cuts failures sharply, but P4 still does not beat P2 with a task limit.\n')
     return text
 
 
