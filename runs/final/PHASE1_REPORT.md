@@ -1,6 +1,6 @@
 # Phase 1 Report — Memory-Aware Agent Edge Serving (Option 1)
 
-_Generated 2026-10-26T21:44 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
+_Generated 2026-10-26T21:51 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
 
 ## 1. Question and baseline
 
@@ -239,8 +239,10 @@ The Phase 2 mechanism is therefore a memory-aware admission and retention policy
 ## 8. Reproduce
 
 ```bash
-bash scripts/overnight.sh         # capture → micro → cache → macro rounds → report
-.venv/bin/python -m phase1.final --results-dir runs/final
+HOURS=9 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &   # resumable full pipeline
+.venv/bin/python -m phase1.final --results-dir runs/final                         # figures + this report
 ```
+
+Setup, options and the AWS procedure are in the project `README.md`; definitions and validity rules in `docs/DESIGN.md`.
 
 Raw logs: `raw/`; tables: `summary/`; figures: `figures/` (PNG + PDF); pipeline log: `logs/pipeline.log`.

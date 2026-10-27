@@ -1,6 +1,6 @@
 """Microbenchmarks and tau-derived append-only multi-step serving replay.
 
-Defaults reproduce the original Mac pilot. Sweep axes for macro:
+Macro defaults are the Phase 1 main condition. Sweep axes for macro:
   --k        request concurrency of the external FIFO (in-flight model calls)
   --jobs-active  J, task-level admission: at most J agent tasks hold state at once
   --gap      tool/idle delay between steps: recorded | zero | fixed:S | exp:MEAN | lognormal:MEDIAN:SIGMA
@@ -390,20 +390,16 @@ def main():
     parser.add_argument('--k', type=int_list, default=[1, 2], help='Request concurrency list')
     # macro
     parser.add_argument('--workload', help='Frozen workload JSON; no tau/DeepSeek needed')
-    parser.add_argument('--live-dir', default='results/raw/live_test')
-    parser.add_argument('--source-count', type=int, default=4, help='0 = all captured tasks')
+    parser.add_argument('--live-dir', default='runs/final/raw/live_test')
+    parser.add_argument('--source-count', type=int, default=0, help='0 = all captured tasks')
     parser.add_argument('--num-jobs', type=int, default=0, help='Jobs per run; default one per source task')
     parser.add_argument('--jobs-active', type=lambda s: [int(x) for x in s.split(',')], default=[0],
                         help='Task admission limits J; 0 = unlimited')
-    parser.add_argument('--gap', type=lambda s: s.split(','), default=['recorded'])
-    parser.add_argument('--gap-mode', choices=['recorded', 'zero', 'both'], default=None,
-                        help='Deprecated alias for --gap')
-    parser.add_argument('--arrival', type=lambda s: s.split(','), default=['batch'])
+    parser.add_argument('--gap', type=lambda s: s.split(','), default=['lognormal:2:1'])
+    parser.add_argument('--arrival', type=lambda s: s.split(','), default=['poisson:1'])
     parser.add_argument('--steps-limit', type=int, default=0, help='Smoke tests only')
     parser.add_argument('--skip-done', action='store_true', help='Skip macro runs whose label is already logged')
     args = parser.parse_args()
-    if args.gap_mode:
-        args.gap = ['recorded', 'zero'] if args.gap_mode == 'both' else [args.gap_mode]
     for spec in args.gap:
         gap_delay(spec, 0.0, 'validate')
     for spec in args.arrival:

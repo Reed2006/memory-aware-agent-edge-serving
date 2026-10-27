@@ -1,5 +1,0 @@
-label,P,ctx_size,ctx_per_slot,kv_unified,cache_ram_mib,k,j,gap_mode,arrival,repeat,steps_limit,job,task_id,arrival_s,admitted_s,done_s,admission_wait_s,gap_total_s,status,error,steps,expected_steps,output_tokens,expected_output_tokens,max_input_tokens,prefix_verified,latency_s,service_s,isolated_s,slowdown
-macro-P4-C16384-K2-Jall-zero-batch-R0-S2,4,16384,4096,False,0,2,0,zero,batch,0,2,0,79,1196303.545289708,1196303.545289833,1196303.546959708,1.25030055642128e-07,0.0,HTTPStatusError,"Client error '400 Bad Request' for url 'http://127.0.0.1:18080/completion'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",0,2,0,113,5064,True,0.001669999910518527,0.001669874880462885,,
-macro-P4-C16384-K2-Jall-zero-batch-R0-S2,4,16384,4096,False,0,2,0,zero,batch,0,2,1,26,1196303.742650708,1196303.74265125,1196303.750740208,5.420297384262085e-07,0.0,HTTPStatusError,"Client error '400 Bad Request' for url 'http://127.0.0.1:18080/completion'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",0,2,0,69,5021,True,0.00808950001373887,0.008088957984000444,,

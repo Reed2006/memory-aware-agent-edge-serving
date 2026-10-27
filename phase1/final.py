@@ -19,7 +19,8 @@ import pandas as pd
 
 from phase1.summarize import summarize
 
-COLORS = ['#156b7c', '#e47d54', '#6878a9', '#90b7a5', '#bc9a63', '#a05a7a', '#4f8f3a', '#7a7a7a']
+COLORS = ['#156b7c', '#e47d54', '#6878a9', '#90b7a5', '#bc9a63', '#a05a7a', '#4f8f3a', '#7a7a7a', '#d4a72c', '#3c3c64']
+REPEAT_COLORS = ['#156b7c', '#7fb3bd', '#c9dfe3']   # R0, R1, R2: same task mix across configs within a repeat
 KV_BYTES_PER_TOKEN = 36 * 8 * 128 * 2 * 2   # Qwen3-4B: layers x KV heads x head dim x (K,V) x f16
 MAIN_GAP, MAIN_ARRIVAL = 'lognormal:2:1', 'poisson:1'
 ROOT: Path
@@ -134,6 +135,18 @@ def order_configs(names):
     return sorted(set(names), key=key)
 
 
+def per_repeat_bars(ax, runs, configs, metric, scale=1.0):
+    """Grouped bars, one per repeat: repeats are different task mixes, so they are shown, not averaged."""
+    repeats = sorted(runs.repeat.unique())
+    width = .8 / len(repeats)
+    x = np.arange(len(configs))
+    for i, r in enumerate(repeats):
+        vals = runs[runs.repeat == r].set_index('config')[metric].reindex(configs) * scale
+        ax.bar(x + (i - (len(repeats) - 1) / 2) * width, vals, width * .95,
+               color=REPEAT_COLORS[i % len(REPEAT_COLORS)], label=f'R{r}')
+    ax.set_xticks(x, configs, rotation=35, ha='right', fontsize=8)
+
+
 def by_config(runs, metric):
     grouped = runs.groupby('config')[metric].agg(['mean', 'std', 'count'])
     return grouped.reindex(order_configs(grouped.index))
@@ -149,7 +162,7 @@ def fig_workload(live):
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.6))
     for color, (name, records) in zip(COLORS, [('eval (test)', test), ('dev (train)', train)]):
         steps = [len(r['calls']) for r in records]
-        axes[0].hist(steps, bins=range(0, 45, 2), alpha=.6, color=color, label=f'{name}, n={len(records)}')
+        axes[0].hist(steps, bins=range(0, max(steps) + 4, 2), alpha=.6, color=color, label=f'{name}, n={len(records)}')
     for record in test:
         lengths = [len(c['prompt_tokens']) for c in record['calls']]
         ok = record.get('env_reward') == 1
@@ -244,28 +257,32 @@ def fig_main(macro):
     if runs.empty:
         return
     configs = order_configs(runs.config)
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-    x = np.arange(len(configs))
-    for metric, ax, title in [('jobs_per_min', axes[0], 'Completed tasks / min'), ('p95', axes[1], 'Task completion time')]:
-        g = by_config(runs, metric)
-        ax.bar(x, g['mean'], yerr=g['std'], color=COLORS[0], capsize=3, alpha=.85, label='P95' if metric == 'p95' else None)
-        for xi, c in zip(x, configs):
-            vals = runs[runs.config == c][metric]
-            ax.scatter([xi] * len(vals), vals, color='black', s=10, zorder=3)
-        ax.set(title=title)
-    g50 = by_config(runs, 'p50')
-    axes[1].bar(x, g50['mean'], color=COLORS[3], alpha=.9, label='P50')
-    axes[1].legend(frameon=False)
-    axes[1].set(ylabel='s')
+    fig, axes = plt.subplots(1, 3, figsize=(17, 5.2))
+    per_repeat_bars(axes[0], runs, configs, 'jobs_per_min')
+    axes[0].set(title='Completed tasks / min, per repeat', ylabel='tasks / min')
+    axes[0].legend(frameon=False, title='repeat', fontsize=8)
+    pivot, ratio = paired_throughput(runs)
+    if ratio is not None:
+        x = np.arange(len(configs))
+        for i, r in enumerate(ratio.columns):
+            axes[1].scatter(x, ratio.loc[configs, r], color=REPEAT_COLORS[i % 3], edgecolor='#333', s=40, zorder=3, label=f'R{r}')
+        axes[1].axhline(1, color='#999', lw=1, ls='--')
+        axes[1].set_xticks(x, configs, rotation=35, ha='right', fontsize=8)
+        axes[1].set(title=f'Throughput relative to FIFO {REF_CONFIG} (same tasks)', ylabel='× FIFO')
+        axes[1].legend(frameon=False, title='repeat', fontsize=8)
     sub = runs.groupby('config')[['submitted', 'completed']].sum().reindex(configs)
-    axes[2].bar(x, sub.submitted - sub.completed, color=COLORS[1])
-    axes[2].set(title='Failed tasks (all repeats)', ylabel='tasks', ylim=(0, max(1, (sub.submitted - sub.completed).max() * 1.15)))
-    for ax in axes:
-        ax.set_xticks(x, configs, rotation=35, ha='right', fontsize=8)
-    fig.suptitle('F4  End-to-end FIFO baselines under a fixed 24K-token KV budget', x=.01, ha='left', weight='bold')
+    failed = sub.submitted - sub.completed
+    bars = axes[2].bar(np.arange(len(configs)), failed / sub.submitted * 100, color=COLORS[1])
+    for bar, f, n in zip(bars, failed, sub.submitted):
+        if f:
+            axes[2].text(bar.get_x() + bar.get_width() / 2, bar.get_height(), f'{f}/{n}', ha='center', va='bottom', fontsize=8)
+    axes[2].set_xticks(np.arange(len(configs)), configs, rotation=35, ha='right', fontsize=8)
+    axes[2].set(title='Failed tasks (context overflow)', ylabel='% of submitted', ylim=(0, 100))
+    fig.suptitle('F4  End-to-end FIFO baselines by server configuration and KV budget', x=.01, ha='left', weight='bold')
     fig.tight_layout(rect=[0, .06, 1, .93])
     save(fig, 'f04_main', f'Eval workload (test split), Poisson {MAIN_ARRIVAL.split(":")[1]} task/min, tool delay {MAIN_GAP}. '
-                          'Bars mean ± SD across repeats, dots per repeat. P=slots, u=unified KV, K=request concurrency, J=active-task limit.')
+                          'P = slots, u = unified KV, K = request concurrency, J = active-task limit. '
+                          'Each repeat is a different seeded mix of 8 tasks (R1 short, R2 long).')
 
 
 @section
@@ -297,16 +314,17 @@ def fig_bottleneck(macro):
     runs = main_condition(macro['runs'])
     if runs.empty:
         return
-    fig, axes = plt.subplots(1, 2, figsize=(14, 4.8))
+    configs = order_configs(runs.config)
+    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
     for ax, metric, title in [(axes[0], 'wasted_frac', 'Share of prefill tokens that recompute history'),
                               (axes[1], 'hit_rate', 'Continuations that reused their full history')]:
-        g = by_config(runs, metric) * 100
-        ax.bar(g.index, g['mean'], yerr=g['std'], color=COLORS[1] if metric == 'wasted_frac' else COLORS[0], capsize=3)
+        per_repeat_bars(ax, runs, configs, metric, scale=100)
         ax.set(title=title, ylabel='%', ylim=(0, 105))
-        ax.tick_params(axis='x', rotation=35, labelsize=8)
+    axes[0].legend(frameon=False, title='repeat', fontsize=8)
     fig.suptitle('F6  The bottleneck: history eviction and re-prefill', x=.01, ha='left', weight='bold')
     fig.tight_layout(rect=[0, .05, 1, .93])
-    save(fig, 'f06_bottleneck', 'Wasted = prompt tokens evaluated beyond the new tokens of the step (append-only replay); hit = cache_n ≥ previous prompt + output − 1.')
+    save(fig, 'f06_bottleneck', 'Wasted = prompt tokens evaluated beyond the new tokens of the step (append-only replay); '
+                                'hit = cache_n ≥ previous prompt + output − 1. J1 configurations waste 0%.')
 
 
 @section
@@ -357,15 +375,22 @@ def fig_sweep(macro, column, values, labels, name, title, note):
         return None
     present = [v for v in values if v in set(sub[column])]
     fig, axes = plt.subplots(1, 4, figsize=(17, 4.4))
-    for ax, metric, t in zip(axes, ['jobs_per_min', 'p95', 'wasted_frac', 'hit_rate'],
-                             ['Tasks / min', 'P95 completion (s)', 'Wasted prefill share', 'Full-history hit rate']):
-        g = sub.groupby(column)[metric].agg(['mean', 'std']).reindex(present)
-        ax.errorbar(range(len(present)), g['mean'], yerr=g['std'], marker='o', color=COLORS[0], capsize=3)
+    metrics = [('jobs_per_min', 'Tasks / min', 1, None), ('p95', 'P95 completion (s)', 1, None),
+               ('wasted_frac', 'Wasted prefill share (%)', 100, (0, 100)), ('hit_rate', 'Full-history hit rate (%)', 100, (0, 105))]
+    for ax, (metric, t, scale, ylim) in zip(axes, metrics):
+        for i, (r, g) in enumerate(sub.groupby('repeat')):
+            g = g.set_index(column)[metric].reindex(present) * scale
+            ax.plot(range(len(present)), g, marker='o', color=REPEAT_COLORS[i % 3], mec='#333', label=f'R{r}')
+        mean = sub.groupby(column)[metric].mean().reindex(present) * scale
+        ax.plot(range(len(present)), mean, color='black', lw=2.2, label='mean')
         ax.set(title=t, xticks=range(len(present)))
+        if ylim:
+            ax.set_ylim(*ylim)
         ax.set_xticklabels([labels[values.index(v)] for v in present], fontsize=8)
+    axes[0].legend(frameon=False, fontsize=8)
     fig.suptitle(title, x=.01, ha='left', weight='bold')
     fig.tight_layout(rect=[0, .05, 1, .92])
-    save(fig, name, note)
+    save(fig, name, note + ' Thin lines: individual repeats (paired task mixes); thick line: mean.')
     return sub.groupby(column)[['jobs_per_min', 'p50', 'p95', 'wasted_frac', 'hit_rate', 'slowdown']].mean().reindex(present)
 
 
@@ -378,7 +403,7 @@ def fig_fairness(macro):
     configs = order_configs(jobs.config)
     cut = jobs.expected_output_tokens.median()
     fig, axes = plt.subplots(1, 2, figsize=(14, 4.8))
-    for color, c in zip(COLORS, configs):
+    for color, c in zip(COLORS * 2, configs):
         s = np.sort(jobs[jobs.config == c].slowdown)
         axes[0].step(s, np.arange(1, len(s) + 1) / len(s), where='post', color=color, label=c)
     axes[0].set(xscale='log', xlabel='slowdown (log)', ylabel='fraction of tasks', title='Slowdown distribution')
@@ -389,10 +414,10 @@ def fig_fairness(macro):
     for i, kind in enumerate(['short', 'long']):
         if kind in g:
             axes[1].bar(x + (i - .5) * .38, g[kind], .36, color=COLORS[i], label=f'{kind} tasks')
-    axes[1].set(xticks=x, ylabel='mean slowdown', title='Do long tasks wait disproportionately?')
+    axes[1].set(xticks=x, ylabel='mean slowdown', title='Short vs long tasks: admission limits make short tasks wait')
     axes[1].set_xticklabels(g.index, rotation=35, ha='right', fontsize=8)
     axes[1].legend(frameon=False)
-    fig.suptitle('F8  Fairness of FIFO baselines', x=.01, ha='left', weight='bold')
+    fig.suptitle('F8  Fairness: slowdown relative to running alone', x=.01, ha='left', weight='bold')
     fig.tight_layout(rect=[0, .05, 1, .93])
     save(fig, 'f08_fairness', 'Slowdown = completion time / (isolated compute time from J=1,K=1 runs + own tool delays). Long = above-median generated tokens.')
     return g
@@ -653,8 +678,9 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
         '- The 600 s per-request HTTP deadline is a client limit, not a production SLO.\n'
         '- The user simulator is DeepSeek, not TritonAI; it only shapes the captured trajectories.\n')
     add('## 8. Reproduce\n')
-    add('```bash\nbash scripts/overnight.sh         # capture → micro → cache → macro rounds → report\n'
-        '.venv/bin/python -m phase1.final --results-dir runs/final\n```\n')
+    add('```bash\nHOURS=9 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &   # resumable full pipeline\n'
+        '.venv/bin/python -m phase1.final --results-dir runs/final                         # figures + this report\n```\n')
+    add('Setup, options and the AWS procedure are in the project `README.md`; definitions and validity rules in `docs/DESIGN.md`.\n')
     add('Raw logs: `raw/`; tables: `summary/`; figures: `figures/` (PNG + PDF); pipeline log: `logs/pipeline.log`.\n')
     if NOTES:
         add('\n## Generation notes\n' + '\n'.join(f'- {n}' for n in NOTES))

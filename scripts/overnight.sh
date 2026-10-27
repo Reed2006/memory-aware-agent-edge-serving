@@ -40,10 +40,6 @@ report() {
 log "=== pipeline start, deadline $(date -r $DEADLINE '+%F %T'), commit $(git rev-parse --short HEAD)"
 
 # ---- 1. live capture (resumes: existing task files are skipped) -------------------
-for split in test train; do
-  mkdir -p "$OUT/raw/live_$split"
-  cp -n results/raw/live_$split/task_*.json "$OUT/raw/live_$split/" 2>/dev/null
-done
 server --parallel 2 --ctx-size 24576
 log "capture test 20"
 $PY -m phase1.capture --split test --count 20 --max-steps 40 --results-dir "$OUT" || log "CAPTURE TEST FAILED"

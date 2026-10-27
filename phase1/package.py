@@ -1,4 +1,4 @@
-"""Package the verified pilot for handoff; exclude credentials and model binaries."""
+"""Package code and the final Phase 1 results for handoff (e.g. to AWS); exclude credentials and model weights."""
 
 import hashlib
 import json
@@ -8,7 +8,7 @@ from pathlib import Path
 
 def safe_files(root: Path, secret: bytes | None):
     roots = ['README.md', '.gitignore', 'requirements-lock.txt',
-             'phase1', 'tests', 'configs', 'docs', 'results', 'figures']
+             'phase1', 'tests', 'scripts', 'docs', 'runs']
     for name in roots:
         selected = root / name
         candidates = [selected] if selected.is_file() else sorted(selected.rglob('*'))
@@ -17,7 +17,7 @@ def safe_files(root: Path, secret: bytes | None):
                 continue
             relative = path.relative_to(root)
             if ('__pycache__' in relative.parts or '.pytest_cache' in relative.parts
-                    or relative.parts[:2] == ('results', 'cache')
+                    or (relative.parts[0] == 'runs' and 'cache' in relative.parts)
                     or path.name in ['API.md', '.DS_Store'] or path.suffix in ['.gguf', '.bin']):
                 continue
             if secret and (secret in path.read_bytes() or secret in str(relative).encode()):
@@ -27,16 +27,16 @@ def safe_files(root: Path, secret: bytes | None):
 
 def main():
     root = Path.cwd()
-    for required in ['results/verification.json', 'results/restore_validation.json', 'results/REPORT.md']:
+    for required in ['runs/final/PHASE1_REPORT.md', 'runs/final/restore_validation.json', 'runs/final/manifest.json']:
         if not (root / required).exists():
             raise SystemExit(f'Required completed artifact missing: {required}')
     secret_path = root / 'API.md'
     secret = secret_path.read_bytes().strip() if secret_path.exists() else None
     source_hashes = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
-                     for folder in ['phase1', 'tests', 'configs']
+                     for folder in ['phase1', 'tests', 'scripts']
                      for p in sorted((root / folder).rglob('*'))
                      if p.is_file() and '__pycache__' not in p.parts}
-    (root / 'results/source-hashes.json').write_text(json.dumps(source_hashes, indent=2))
+    (root / 'runs/final/source-hashes.json').write_text(json.dumps(source_hashes, indent=2))
     target = root / 'artifacts/phase1-local-results.zip'
     target.parent.mkdir(exist_ok=True)
     files = list(safe_files(root, secret))

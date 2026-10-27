@@ -124,7 +124,7 @@ class Fifo:
                 self.queue.task_done()
 
 
-def add_results_arg(parser, default='results'):
+def add_results_arg(parser, default='runs/scratch'):
     parser.add_argument('--results-dir', default=default,
                         help='Root for raw logs, summaries and metadata of one experiment')
 

@@ -2,7 +2,7 @@
 
 The KV budget is --ctx-size tokens in total. With partitioned KV (default) each of
 the --parallel slots owns ctx-size / parallel tokens; --kv-unified lets slots share
-one pool. Defaults reproduce the original Mac pilot (P=2, 24,576 tokens).
+one pool. Defaults match the main Phase 1 configuration (P=2, 24,576 tokens).
 """
 
 import argparse
@@ -82,7 +82,7 @@ def start(args) -> None:
     root = Path.cwd()
     model = root / 'models/Qwen3-4B-Q4_K_M.gguf'
     if not model.exists():
-        raise SystemExit('Download the model recorded in results/manifest.json first.')
+        raise SystemExit('Download the model recorded in runs/final/manifest.json first (see README).')
     assert_port_free(args.port, wait_s=60)
     results = root / args.results_dir
     log_dir, slot_save_path = results / 'logs', results / 'cache'
@@ -135,7 +135,7 @@ def main():
     parser.add_argument('--kv-unified', action='store_true', help='Share one KV pool across slots')
     parser.add_argument('--cache-ram', type=int, default=0, help='Host prompt cache MiB (llama.cpp built-in)')
     parser.add_argument('--port', type=int, default=18080)
-    parser.add_argument('--results-dir', default='results')
+    parser.add_argument('--results-dir', default='runs/scratch')
     args = parser.parse_args()
     stop() if args.action == 'stop' else start(args)
 

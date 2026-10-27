@@ -1,0 +1,19 @@
+{
+  "phase1/__init__.py": "30058b69e2ba557ed242b674ddbdc259d4501d9d329363f2ed6df963f9766f8a",
+  "phase1/adapters.py": "19373f175fb9383309ed368e2a7bffa99385ef95bb41a671cefd5e3f6cbf1148",
+  "phase1/bench.py": "6bcec091a9b7da2de35b979459f2ef272de88e6a4b6052fb6839f96a5ce3bba8",
+  "phase1/capture.py": "6f73c6bf0c3765ab810bf9ec928bb4e04e46e7eec6b7974155042bb6aef4389d",
+  "phase1/check_restore.py": "49c5f93304e9a21e4f2f4626a9d30b44d75013f913b7e620b69a16fbb77f5f02",
+  "phase1/core.py": "0923f2c1d64a4f6c4847abf9eece63afd6e12dcc4d96fa58ac3acd2e5c34fe18",
+  "phase1/final.py": "a976d52e5d48f62b1c991c91ec9632ceba152532d6de5b91bf3ed6235e696b00",
+  "phase1/package.py": "26650b02e5af563cbd3a2c3018f028422a43446eb4d14b3c3b833dfd28ed8cca",
+  "phase1/server.py": "00c3ca7aca910e25e9df7846c790b1f4abcea1eeecb8b62f3cd3004cb094118d",
+  "phase1/summarize.py": "ec58a58912d37688efa53999a2d9f2c171b4c7166e96f53c90f8ab6286689e99",
+  "phase1/sweep.py": "abb935ec59bda9e5c82d77ed198208441305ad237d7863d3b29f9d13a76a4c3b",
+  "tests/test_adapters.py": "dac505cd3446785dbeec0bc97a6b532f4f229614afaac01954af698ba35e6e2f",
+  "tests/test_bench.py": "e9e5e8a92159a3868ee9cc57c789bf00a228768677b52a3952276831fefeb9f8",
+  "tests/test_core.py": "3a7619a0ebefa2358afdca6747a0fe50da9093c66e5150e16eb0965ad8a4a246",
+  "tests/test_package.py": "32cd0f4e5171be5bf459e432c768a6759b8454ff5271c143b47a198757172598",
+  "tests/test_server.py": "44dbfd15d5984b54c774da3c6ad7c549c539beb9a3cdfe1125cbac84f22d61b4",
+  "scripts/overnight.sh": "5721362ba8b6b92d891e2ef109cb8364174bea968f40843d3ccb137d9b6c4267"
+}
