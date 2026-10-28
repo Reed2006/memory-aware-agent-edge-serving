@@ -1,6 +1,6 @@
 # Phase 1 Report — Memory-Aware Agent Edge Serving (Option 1)
 
-_Generated 2026-10-26T21:51 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
+_Generated 2026-10-28T16:14 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
 
 ## 1. Question and baseline
 
@@ -211,6 +211,61 @@ On the dev tasks the best fixed baseline is again P2 K2 J2 (J = number of slots)
 All Retail tasks start with the same 4,891-token system prompt and tool schema. llama.cpp picks the idle slot whose cached prompt shares the longest prefix with the new request, and with one request in flight (K = 1) every slot is idle, so it keeps choosing the same slot: **with K = 1 the second slot is never used**, and P2 K1 behaves like P1 K1. Two active tasks (J = 2) then overwrite each other in one slot while the other stays empty. When a history is lost, the shared prefix survives and only the task-specific part is recomputed. Slot choice is not agent-aware: pinning each task to a slot (`id_slot`) is a cheap first step for Phase 2.
 
 
+### 4.10 Server startup (cold start)
+
+| server | launches | model load s, median (min–max) | listening after s, median | warm-up request ms, median |
+|---|---|---|---|---|
+| P1·24K | 4 | 0.67 (0.65–0.68) | 0.75 | 497 |
+| P2·24K | 14 | 0.67 (0.65–1.91) | 0.75 | 468 |
+| P4·24K | 4 | 0.66 (0.66–0.69) | 0.75 | 460 |
+| P4u·24K | 4 | 0.65 (0.65–0.69) | 0.74 | 461 |
+| P4·36K | 2 | 1.66 (0.87–2.45) | 1.91 | 486 |
+
+
+One row per `llama-server` launch is in `summary/startup.csv`, parsed from `logs/server-*.log` (`--cache-ram` is not visible in the log, so those launches are grouped by slots and budget). Loading the model takes 0.66 s at the median and at most 2.45 s: the weights are memory-mapped, so a launch whose model file is not already in the OS page cache (for example the first launch after a reboot) is slower. The first request after each launch is the bench warm-up (5 prompt + 16 generated tokens). Neither model load nor the warm-up enters any measurement above, so all results describe a warm server; on an edge device that starts the server on demand, both would add to the first task.
+
+
+### 4.11 Eviction cliff: hit rate vs active tasks (F12)
+
+| server | 1 active | 2 active | 3 active | 4 active | 5 active | 6+ active |
+|---|---|---|---|---|---|---|
+| P1·24K | 100% (38) | 19% (83) | 0% (42) | 0% (20) | 0% (17) | 0% (27) |
+| P2·24K | 100% (563) | 83% (480) | 11% (190) | 0% (112) | 0% (87) | 0% (60) |
+| P2·24K+RAM3G | 100% (41) | 88% (49) | 23% (44) | 0% (43) | 0% (22) | 0% (28) |
+| P4·24K | 100% (75) | 92% (13) | 100% (12) | 85% (13) | 27% (15) | – |
+| P4·36K | 100% (75) | 96% (56) | 92% (12) | – | – | – |
+| P4u·24K | 100% (72) | 94% (49) | 100% (11) | 60% (10) | 23% (13) | 6% (18) |
+
+Full-history hit rate of continuations (number of continuations), by how many agent tasks were admitted and unfinished when the step was dispatched. Pooled over all runs of each server, so it is descriptive. With two slots, a returning task finds its history 100% of the time when it is alone and 83% with two active tasks, but only 11% with three, and almost never with more. More slots move the cliff to more tasks, at the price of smaller per-slot contexts (§4.3). Eviction is set by how many tasks overlap relative to the slots, which is what an admission limit controls.
+
+
+### 4.12 Context growth and the cost of a miss (F13)
+
+| context tokens | median prefill s, history reused | median prefill s, history re-prefilled |
+|---|---|---|
+| 5,000–5,999 | 0.4 | 2.5 |
+| 6,000–6,999 | 0.6 | 9.7 |
+| 7,000–7,999 | 1.0 | 17.6 |
+| 8,000–8,999 | 0.8 | 25.9 |
+| 9,000–9,999 | 3.8 | 31.0 |
+
+P2·24K K2, main condition: 454 continuations, 112 misses. A step that reuses its history prefills only its new tokens (median 0.5 s overall). A miss usually keeps the 4,891-token shared prefix in the slot and recomputes the task-specific history (median 797 tokens), at about 6.0 s per 1,000 tokens under contention. The cost of each eviction therefore grows roughly linearly as the task's context grows, while a hit stays a matter of its new tokens and of sharing the batch. This is observational: long contexts are also late steps of long tasks, which overlap more other tasks; a controlled growth sweep is future work.
+
+
+### 4.13 Memory pressure in tokens (F14)
+
+| config | repeat | peak demand (tokens) | time above the 24K budget | mean active tasks | full-history hit | tasks/min |
+|---|---|---|---|---|---|---|
+| P2·24K K2 J2 | R0 | 17,129 | 0% | 1.3 | 96% | 0.843 |
+| P2·24K K2 J∞ | R0 | 32,535 | 17% | 2.4 | 69% | 0.820 |
+| P2·24K K2 J2 | R1 | 17,153 | 0% | 0.7 | 97% | 0.474 |
+| P2·24K K2 J∞ | R1 | 16,962 | 0% | 0.7 | 97% | 0.488 |
+| P2·24K K2 J2 | R2 | 18,670 | 0% | 1.8 | 94% | 0.891 |
+| P2·24K K2 J∞ | R2 | 41,114 | 68% | 4.4 | 7% | 0.452 |
+
+Demand is the KV the admitted tasks would need to keep their whole histories resident. Resident memory cannot show this (F7: the pool is preallocated), but the demand can: under FIFO it exceeds the budget whenever several tasks overlap, and every token above the budget belongs to a history that must be evicted and later re-prefilled. With partitioned slots eviction starts even earlier, as soon as more tasks than slots are active (F12). With J = 2 the demand never exceeds two histories, which always fit.
+
+
 ## 5. Dominant bottleneck
 
 Across baselines the share of prefill spent recomputing history ranges from 0.0% (P2·24K K1 J1) to 78.0% (P2·24K K1 J∞); full-history hit rates range 25%–100%. Across configurations, wasted-prefill share and completed tasks/min correlate at r = -0.43. The paired comparison is clearer: on the same tasks, P2·24K K2 J2 reaches 1.97× the throughput of FIFO P2 K2 J∞ in the long-task repeat R2 but only 0.97× in the short-task repeat R1. Removing eviction pays off in proportion to how much history there is to lose. Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long Retail histories), fewer slots means agents evict one another's histories while their tools run. Raising the budget from 24K to 36K tokens at P4 cuts failures sharply, but P4 still does not beat P2 with a task limit.
@@ -230,8 +285,9 @@ The Phase 2 mechanism is therefore a memory-aware admission and retention policy
 ## 7. Limitations
 
 - Replay is append-only and benchmark-derived, not a byte-faithful trace; it does not re-execute customer-service semantics. Completion means "all recorded steps executed", not task success.
-- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3).
+- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3). Run-to-run noise on identical inputs is not measured here (`SCOPE=noise` in the pipeline measures it).
 - Latency of configurations with failures is over completed tasks only.
+- Each macro run is 8 tasks starting from erased slots (an empty KV cache), so it includes a ramp-up and a drain; there is no separate steady-state window, and tasks/min includes the drain tail. Server startup is reported in §4.10.
 - One laptop: thermal state and background processes are not fully controlled; RSS under-counts Metal allocations.
 - The 600 s per-request HTTP deadline is a client limit, not a production SLO.
 - The user simulator is DeepSeek, not TritonAI; it only shapes the captured trajectories.
