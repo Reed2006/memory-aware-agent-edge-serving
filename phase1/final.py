@@ -488,6 +488,22 @@ def power_text(meta_rows):
     return text
 
 
+def machine_text(meta_rows):
+    """Machine row of the setup table from the platform recorded with each run (older runs lack it)."""
+    recorded = [p for p in meta_rows.get('platform', pd.Series(dtype=object)).dropna() if isinstance(p, dict)]
+    if not recorded:
+        return f'{platform.machine()} macOS {platform.mac_ver()[0]}, Apple M4, 16 GB unified memory'
+    p = recorded[-1]
+    host = f"EC2 {p['instance_type']}" if p.get('instance_type') else f"{p['system']} {p['release']}"
+    return f"{host}, {p.get('cpu_model') or p['machine']}, {p['cpus']} logical CPUs, {p['memory_gib']} GiB memory"
+
+
+def backend_text(meta_rows):
+    commands = meta_rows.get('server_command', pd.Series(dtype=object)).dropna()
+    cpu = any('--no-kv-offload' in c for c in commands if isinstance(c, list))
+    return 'CPU only (no GPU offload)' if cpu else 'Metal'
+
+
 def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup=None):
     lines = []
     add = lines.append
@@ -508,8 +524,9 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
         'An optional task-level admission limit J caps how many agent tasks are active at once (waiting counts toward latency).\n')
     add('## 2. Setup\n')
     add(table(['Item', 'Value'], [
-        ['Machine', f'{platform.machine()} macOS {platform.mac_ver()[0]}, Apple M4, 16 GB unified memory'],
-        ['Runtime', 'llama.cpp llama-server build 11669 (commit 620d2225c), Metal, flash-attn, continuous batching'],
+        ['Machine', machine_text(meta_rows)],
+        ['Runtime', f'llama.cpp llama-server build 11669 (commit 620d2225c), {backend_text(meta_rows)}, flash-attn, '
+                    'continuous batching'],
         ['Model', 'Qwen3-4B Q4_K_M (sha256 7485fe6f…), f16 KV, thinking disabled; fixed in all comparisons'],
         ['KV budget', '--ctx-size tokens in total; partitioned per slot unless "u" (unified pool); f16 KV = 144 KiB/token'],
         ['Agent benchmark', 'τ²-bench v1.0.1 Retail (official tools, orchestrator, ENV evaluator)'],

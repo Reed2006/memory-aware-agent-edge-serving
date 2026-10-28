@@ -15,9 +15,12 @@ import asyncio
 import itertools
 import json
 import math
+import os
+import platform
 import random
 import subprocess
 import time
+import urllib.request
 from pathlib import Path
 
 import psutil
@@ -125,6 +128,33 @@ def power_state() -> str | None:
                               check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return None  # not macOS
+
+
+def platform_info() -> dict:
+    """OS, CPU model, logical CPUs, memory and, on EC2, the instance type (IMDSv2)."""
+    info = dict(system=platform.system(), machine=platform.machine(), release=platform.release(),
+                cpus=os.cpu_count(), memory_gib=round(psutil.virtual_memory().total / 2**30, 1),
+                cpu_model=None, instance_type=None)
+    darwin = info['system'] == 'Darwin'
+    try:
+        out = subprocess.run(['sysctl', '-n', 'machdep.cpu.brand_string'] if darwin else ['lscpu'],
+                             capture_output=True, text=True, check=True).stdout
+        # Newer lscpu indents "Model name" under "Vendor ID".
+        info['cpu_model'] = out.strip() if darwin else next(
+            (s.split(':', 1)[1].strip() for s in out.splitlines() if s.strip().startswith('Model name')), None)
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    try:
+        imds = 'http://169.254.169.254/latest'
+        token = urllib.request.urlopen(urllib.request.Request(
+            f'{imds}/api/token', method='PUT', headers={'X-aws-ec2-metadata-token-ttl-seconds': '60'}),
+            timeout=0.5).read().decode()
+        info['instance_type'] = urllib.request.urlopen(urllib.request.Request(
+            f'{imds}/meta-data/instance-type', headers={'X-aws-ec2-metadata-token': token}),
+            timeout=0.5).read().decode()
+    except OSError:
+        pass  # not on EC2
+    return info
 
 
 def git_commit() -> str | None:
@@ -416,7 +446,7 @@ async def run_suite(args, results):
         Jsonl(results / 'raw/runs_meta.jsonl').write(dict(
             suite=args.suite, started_unix=time.time(), git_commit=git_commit(),
             args=vars(args), server=server, server_command=server_info().get('command'),
-            power=power_state()))
+            power=power_state(), platform=platform_info()))
         # Warm up the compute path; individual suites reset their cache state.
         await client.complete(payload('Warm up the model.', 16))
         if args.suite == 'micro':
