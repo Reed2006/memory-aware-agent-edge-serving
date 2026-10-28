@@ -82,6 +82,7 @@ The dev split is used to choose baselines; the eval split is used for reported c
 | Request | FIFO wait, round trip, `prompt_n`, `cache_n`, `prompt_ms`, slot |
 | Cache | wasted prefill = prompt tokens evaluated beyond the step's new tokens; full-history hit = `cache_n ≥ len(previous prompt + output) − 1` |
 | Memory | server RSS and system available memory, sampled every 250 ms; theoretical KV pool size |
+| Startup | per server launch, from `logs/server-*.log`: model load time, time until listening, first (warm-up) request time |
 | Fairness | slowdown = completion time / (isolated compute + own tool delay), where isolated compute is the median over J = 1, K = 1 runs; Jain index of 1/slowdown; short- vs long-task slowdown |
 
 Notes on interpreting these:

@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from phase1.startup import startup_rows, write_csv
 from phase1.summarize import summarize
 
 COLORS = ['#156b7c', '#e47d54', '#6878a9', '#90b7a5', '#bc9a63', '#a05a7a', '#4f8f3a', '#7a7a7a', '#d4a72c', '#3c3c64']
@@ -460,6 +461,20 @@ def meta():
     return rows
 
 
+@section
+def load_startup():
+    """One row per llama-server launch, parsed from logs/server-*.log."""
+    rows = startup_rows(ROOT)
+    if not rows:
+        return None
+    write_csv(rows, ROOT / 'summary/startup.csv')
+    frame = pd.DataFrame(rows)
+    frame = frame[frame.P.notna() & frame.load_s.notna()].copy()
+    frame['kv_unified'] = frame.kv_unified.eq(True)
+    frame['server'] = frame.apply(server_name, axis=1)
+    return frame
+
+
 def power_text(meta_rows):
     states = meta_rows.get('power', pd.Series(dtype=str)).dropna().str.split('\n').str[0]
     if states.empty:
@@ -473,7 +488,7 @@ def power_text(meta_rows):
     return text
 
 
-def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness):
+def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup=None):
     lines = []
     add = lines.append
     meta_rows = meta()
@@ -646,6 +661,24 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
                 'and P2 K1 behaves like P1 K1. Two active tasks (J = 2) then overwrite each other in one slot while the other '
                 'stays empty. When a history is lost, the shared prefix survives and only the task-specific part is recomputed. '
                 'Slot choice is not agent-aware: pinning each task to a slot (`id_slot`) is a cheap first step for Phase 2.\n')
+        if startup is not None and not startup.empty:
+            add('\n### 4.10 Server startup (cold start)\n')
+            warmup = startup[startup.first_request_tokens <= 32]
+            rows = []
+            for server, g in startup.groupby('server', sort=False):
+                w = warmup[warmup.server == server].first_request_ms
+                rows.append([server, len(g), f'{fmt(g.load_s.median(), 2)} ({fmt(g.load_s.min(), 2)}–{fmt(g.load_s.max(), 2)})',
+                             fmt(g.ready_s.median(), 2), fmt(w.median(), 0) if len(w) else 'n/a'])
+            add(table(['server', 'launches', 'model load s, median (min–max)', 'listening after s, median',
+                       'warm-up request ms, median'], rows))
+            add('\nOne row per `llama-server` launch is in `summary/startup.csv`, parsed from `logs/server-*.log` '
+                '(`--cache-ram` is not visible in the log, so those launches are grouped by slots and budget). '
+                f'Loading the model takes {fmt(startup.load_s.median(), 2)} s at the median and at most '
+                f'{fmt(startup.load_s.max(), 2)} s: the weights are memory-mapped, so a launch whose model file is not '
+                'already in the OS page cache (for example the first launch after a reboot) is slower. The first request '
+                'after each launch is the bench warm-up (5 prompt + 16 generated tokens). Neither model load nor the '
+                'warm-up enters any measurement above, so all results describe a warm server; on an edge device that '
+                'starts the server on demand, both would add to the first task.\n')
         add('\n## 5. Dominant bottleneck\n')
         add(bottleneck_text(macro, micro, cache))
     add('\n## 6. Phase 2 direction\n')
@@ -674,6 +707,8 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
         '- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. '
         'Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3).\n'
         '- Latency of configurations with failures is over completed tasks only.\n'
+        '- Each macro run is 8 tasks starting from erased slots (an empty KV cache), so it includes a ramp-up and a drain; '
+        'there is no separate steady-state window, and tasks/min includes the drain tail. Server startup is reported in §4.10.\n'
         '- One laptop: thermal state and background processes are not fully controlled; RSS under-counts Metal allocations.\n'
         '- The 600 s per-request HTTP deadline is a client limit, not a production SLO.\n'
         '- The user simulator is DeepSeek, not TritonAI; it only shapes the captured trajectories.\n')
@@ -791,7 +826,8 @@ def main():
                                 'f11_arrival', 'F11  Effect of arrival rate (P2 K2)', 'Poisson arrivals; tool delay log-normal median 2 s.')
         fairness = fig_fairness(macro)
         fig_timeline(macro)
-    report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness)
+    startup = load_startup()
+    report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup)
     print('Wrote', ROOT / 'PHASE1_REPORT.md', 'and figures in', FIG, '| notes:', NOTES or 'none')
 
 

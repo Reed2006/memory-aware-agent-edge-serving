@@ -30,6 +30,7 @@ that gets evicted and then has to be prefilled again.
 | `phase1/check_restore.py` | Checks that greedy output is identical after slot save → overwrite → restore |
 | `phase1/sweep.py` | Restarts the server for each server-side configuration and runs one bench suite |
 | `phase1/summarize.py` | Per-configuration tables: completion, tail latency, wasted prefill, fairness |
+| `phase1/startup.py` | Model load, listen and first-request time per server launch, parsed from server logs |
 | `phase1/final.py` | Figures F1–F11 and the English report |
 | `phase1/package.py` | Handoff archive without credentials or model weights |
 | `scripts/overnight.sh` | The full, resumable Phase 1 pipeline |
@@ -80,6 +81,7 @@ Individual steps:
   --k 2 --jobs-active 0,2 --gap lognormal:2:1 --arrival poisson:1 --results-dir runs/final --skip-done
 .venv/bin/python -m phase1.server stop
 .venv/bin/python -m phase1.summarize --results-dir runs/final
+.venv/bin/python -m phase1.startup --results-dir runs/final    # also run by phase1.final
 .venv/bin/python -m phase1.final --results-dir runs/final
 ```
 
