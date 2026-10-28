@@ -6,7 +6,6 @@ produces a coherent report; absent experiments are listed as not run.
 
 import argparse
 import json
-import platform
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -609,7 +608,8 @@ def machine_text(meta_rows):
     """Machine row of the setup table from the platform recorded with each run (older runs lack it)."""
     recorded = [p for p in meta_rows.get('platform', pd.Series(dtype=object)).dropna() if isinstance(p, dict)]
     if not recorded:
-        return f'{platform.machine()} macOS {platform.mac_ver()[0]}, Apple M4, 16 GB unified memory'
+        # Runs before platform logging all come from the M4; never describe the machine generating the report.
+        return 'arm64 macOS 15.3, Apple M4, 16 GB unified memory'
     p = recorded[-1]
     host = f"EC2 {p['instance_type']}" if p.get('instance_type') else f"{p['system']} {p['release']}"
     return f"{host}, {p.get('cpu_model') or p['machine']}, {p['cpus']} logical CPUs, {p['memory_gib']} GiB memory"
