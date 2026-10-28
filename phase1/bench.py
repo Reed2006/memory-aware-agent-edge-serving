@@ -282,6 +282,13 @@ def make_workload(live_dir: Path, source_count: int):
                 available_live_tasks=len(selection['task_ids']))
 
 
+def macro_label(server, k, j, gap_spec, arrival_spec, repeat, steps_limit=0, trial=0) -> str:
+    """Run label; trial > 0 marks a re-run of the same repeat (identical inputs) for noise."""
+    mode = ('u' if server['kv_unified'] else '') + (f'-RAM{server["cache_ram_mib"]}' if server['cache_ram_mib'] else '')
+    suffix = (f'-S{steps_limit}' if steps_limit else '') + (f'-T{trial}' if trial else '')
+    return f'macro-P{server["P"]}{mode}-C{server["ctx_size"]}-K{k}-J{j or "all"}-{gap_spec}-{arrival_spec}-R{repeat}{suffix}'
+
+
 def quarantine_partial(results: Path, label: str) -> None:
     """Move records of an interrupted run (no macro_runs entry) to raw/interrupted/ so a
     rerun of the same label is not double-counted; the interrupted attempt stays on disk."""
@@ -323,9 +330,7 @@ async def macro(client, results, args, server):
     if args.skip_done and (results / 'raw/macro_runs.jsonl').exists():
         done = {json.loads(s)['label'] for s in (results / 'raw/macro_runs.jsonl').read_text().splitlines() if s}
     for k, j, gap_spec, arrival_spec, repeat in cases:
-        suffix = f'-S{args.steps_limit}' if args.steps_limit else ''
-        mode = ('u' if server['kv_unified'] else '') + (f'-RAM{server["cache_ram_mib"]}' if server['cache_ram_mib'] else '')
-        label = f'macro-P{P}{mode}-C{C}-K{k}-J{j or "all"}-{gap_spec}-{arrival_spec}-R{repeat}{suffix}'
+        label = macro_label(server, k, j, gap_spec, arrival_spec, repeat, args.steps_limit, args.trial)
         if label in done:
             print('skip completed', label, flush=True)
             continue
@@ -334,7 +339,7 @@ async def macro(client, results, args, server):
         config = dict(label=label, P=P, ctx_size=C, ctx_per_slot=server['ctx_per_slot'],
                       kv_unified=server['kv_unified'], cache_ram_mib=server['cache_ram_mib'],
                       k=k, j=j, gap_mode=gap_spec, arrival=arrival_spec, repeat=repeat,
-                      steps_limit=args.steps_limit)
+                      steps_limit=args.steps_limit, trial=args.trial)
         # Same repeat => same arrivals, job order and gaps across all configurations.
         sources = job_sources(tasks, num_jobs, 291 + repeat)
         arrivals = arrival_times(arrival_spec, num_jobs, 291 + repeat)
@@ -428,6 +433,8 @@ def main():
     parser.add_argument('--gap', type=lambda s: s.split(','), default=['lognormal:2:1'])
     parser.add_argument('--arrival', type=lambda s: s.split(','), default=['poisson:1'])
     parser.add_argument('--steps-limit', type=int, default=0, help='Smoke tests only')
+    parser.add_argument('--trial', type=int, default=0,
+                        help='Re-run index for noise runs: same repeat inputs, label suffix -T<n>; 0 = none')
     parser.add_argument('--skip-done', action='store_true', help='Skip macro runs whose label is already logged')
     args = parser.parse_args()
     for spec in args.gap:

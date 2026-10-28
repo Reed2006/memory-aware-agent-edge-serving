@@ -5,7 +5,7 @@ import statistics
 import pandas as pd
 import pytest
 
-from phase1.bench import arrival_times, gap_delay, job_sources
+from phase1.bench import arrival_times, gap_delay, job_sources, macro_label
 from phase1.summarize import jain, request_metrics
 
 
@@ -35,6 +35,15 @@ def test_job_sources_are_balanced():
     jobs = job_sources(tasks, 7, 3)
     assert len(jobs) == 7 and all(2 <= jobs.count(t) <= 3 for t in tasks)
     assert sorted(jobs[:3]) == tasks
+
+
+def test_macro_label_keeps_existing_names_and_marks_trials():
+    server = dict(P=2, ctx_size=24576, kv_unified=False, cache_ram_mib=0)
+    base = 'macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:1-R0'
+    assert macro_label(server, 2, 0, 'lognormal:2:1', 'poisson:1', 0) == base
+    assert macro_label(server, 2, 0, 'lognormal:2:1', 'poisson:1', 0, trial=3) == base + '-T3'
+    unified = dict(server, P=4, kv_unified=True, cache_ram_mib=3072)
+    assert macro_label(unified, 4, 2, 'zero', 'batch', 1, steps_limit=2) == 'macro-P4u-RAM3072-C24576-K4-J2-zero-batch-R1-S2'
 
 
 def test_wasted_prefill_and_history_hit():
@@ -80,7 +89,8 @@ async def test_macro_end_to_end_with_admission_limit_and_overflow(tmp_path, monk
     workload = tmp_path / 'w.json'
     workload.write_text(json.dumps(dict(tasks=[small, big])))
     args = argparse.Namespace(workload=str(workload), steps_limit=0, num_jobs=4, k=[2], jobs_active=[1],
-                              gap=['fixed:0.01'], arrival=['batch'], repeats=1, repeat_start=0, skip_done=False)
+                              gap=['fixed:0.01'], arrival=['batch'], repeats=1, repeat_start=0, skip_done=False,
+                              trial=0)
     server = dict(P=2, ctx_size=80, ctx_per_slot=limit, kv_unified=False, cache_ram_mib=0)
     async with ModelClient('http://test', transport=httpx.MockTransport(handler)) as client:
         await bench.macro(client, tmp_path, args, server)
