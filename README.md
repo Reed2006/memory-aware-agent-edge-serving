@@ -31,6 +31,7 @@ that gets evicted and then has to be prefilled again.
 | `phase1/sweep.py` | Restarts the server for each server-side configuration and runs one bench suite |
 | `phase1/summarize.py` | Per-configuration tables: completion, tail latency, wasted prefill, fairness |
 | `phase1/startup.py` | Model load, listen and first-request time per server launch, parsed from server logs |
+| `phase1/noise.py` | Run-to-run noise: spread of repeated trials on identical inputs (`--trial`) |
 | `phase1/final.py` | Figures F1–F11 and the English report |
 | `phase1/package.py` | Handoff archive without credentials or model weights |
 | `scripts/overnight.sh` | The full, resumable Phase 1 pipeline |
@@ -72,6 +73,14 @@ HOURS=9 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
 - It is resumable: captured tasks, finished suites and logged macro runs are skipped.
 - Progress is logged to `runs/final/logs/pipeline.log`.
 - Run it on AC power with other apps closed.
+- After round 1 it re-runs FIFO P2 K2 J∞ and P2 K2 J2 on R0 three times (`NOISE_TRIALS`,
+  `NOISE_REPEAT`) into `runs/final-noise`. Identical inputs, so the spread is run-to-run noise.
+  `SCOPE=noise` runs only these trials (~1 h on the M4) and never captures:
+
+```bash
+SCOPE=noise WORKLOADS=runs/final HOURS=2 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
+.venv/bin/python -m phase1.noise --results-dir runs/final-noise   # also run by the pipeline
+```
 
 Individual steps:
 
