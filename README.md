@@ -145,6 +145,27 @@ WORKLOADS=runs/final OUT=runs/aws DEV=runs/aws-dev SERVER_ARGS="--cpu --threads 
 tail -f runs/aws/logs/pipeline.log
 ```
 
+**Single experiment** (one configuration, e.g. a quick check before the sweep). These options
+reproduce the sweep's FIFO baseline on repeat R0 (label
+`macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:1-R0`); keep ad-hoc runs in their own directory:
+
+```bash
+export PATH="$PWD/third_party/llama.cpp/build/bin:$PATH"
+.venv/bin/python -m phase1.server --cpu --threads 8 --parallel 2 --ctx-size 24576 --results-dir runs/aws-single
+.venv/bin/python -m phase1.bench macro --workload runs/final/workload_eval.json --results-dir runs/aws-single \
+  --num-jobs 8 --repeat-start 0 --repeats 1 --k 2 --jobs-active 0 \
+  --gap lognormal:2:1 --arrival poisson:1 --timeout 1800 --skip-done
+.venv/bin/python -m phase1.server stop
+.venv/bin/python -m phase1.summarize --results-dir runs/aws-single
+```
+
+- Pick another configuration with the bench's `--k`, `--jobs-active` (0 = no limit), `--repeat-start`,
+  `--gap`, `--arrival`, and the server's `--parallel`, `--ctx-size`, `--kv-unified`, `--cache-ram`.
+- Every value in a comma list adds a run: `--k 1,2 --jobs-active 0,2` is 4 runs.
+- Leave out `--num-jobs 8 --repeats 1 --k 2` and the defaults run 6 runs of all 20 tasks
+  (K 1 and 2 × 3 repeats), which do not match the sweep's 8-task runs.
+- Slowdown and fairness need a `--k 1 --jobs-active 1` run in the same directory.
+
 **4. Copy results back** (from the laptop) and commit them there:
 `rsync -az ubuntu@<host>:memory-aware-agent-edge-serving/runs/aws/ runs/aws/` (same for `runs/aws-dev/`).
 
