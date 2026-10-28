@@ -1,0 +1,2 @@
+log,P,ctx_size,launched_unix,kv_unified,ctx_per_slot,load_s,ready_s,first_request_ms,first_request_tokens
+server-P2-C24576-1793202939.log,2,24576,1793202939,False,12288,3.327884,3.3325299999999998,625.11,21
