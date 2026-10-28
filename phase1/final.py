@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from phase1.curves import active_at_dispatch, kv_demand, time_over
+from phase1.noise import spread, trial_rows
 from phase1.startup import startup_rows, write_csv
 from phase1.summarize import summarize
 
@@ -449,6 +451,121 @@ def fig_timeline(macro):
     save(fig, 'f09_timeline', 'Blank intervals are tool delays and arrivals.')
 
 
+ACTIVE_BINS = range(1, 7)   # 6 = six or more active tasks
+
+
+@section
+def fig_eviction(macro):
+    req = macro['requests'].assign(active=active_at_dispatch(macro['requests'], macro['jobs']))
+    cont = req[(req.step > 0) & (req.status == 'ok')].copy()
+    if cont.empty:
+        return None
+    cont['server'] = cont.apply(server_name, axis=1)
+    cont['bin'] = cont.active.clip(upper=max(ACTIVE_BINS))
+    g = cont.groupby(['server', 'bin']).full_history_hit.agg(['mean', 'count'])
+    g = g[g['count'] >= 10]   # fewer continuations than this give no usable rate
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4.8))
+    servers = order_configs(g.index.get_level_values('server'))
+    for color, server in zip(COLORS, servers):
+        s = g.loc[server]
+        axes[0].plot(s.index, s['mean'] * 100, marker='o', color=color, mec='#333', label=server)
+    ticks = dict(xticks=list(ACTIVE_BINS), xticklabels=[str(b) for b in ACTIVE_BINS][:-1] + [f'{max(ACTIVE_BINS)}+'])
+    axes[0].set(xlabel='active agent tasks when the step was dispatched', ylabel='full-history hit rate (%)',
+                ylim=(-3, 105), title='Hit rate vs active tasks (all runs, pooled)', **ticks)
+    axes[0].legend(frameon=False, fontsize=8)
+    main = main_condition(cont)
+    pair = [('P2·24K K2 J∞', COLORS[1]), ('P2·24K K2 J2', COLORS[0])]
+    for i, (name, color) in enumerate(pair):
+        share = main[main.config == name].bin.value_counts(normalize=True).reindex(ACTIVE_BINS, fill_value=0)
+        axes[1].bar(np.array(ACTIVE_BINS) + (i - .5) * .38, share * 100, .36, color=color, label=name)
+    axes[1].set(xlabel='active agent tasks when the step was dispatched', ylabel='% of continuations',
+                title='How often each level occurs (P2, main condition)', **ticks)
+    axes[1].legend(frameon=False, fontsize=8)
+    fig.suptitle('F12  Eviction cliff: histories survive only while active tasks fit the slots', x=.01, ha='left', weight='bold')
+    fig.tight_layout(rect=[0, .05, 1, .93])
+    save(fig, 'f12_eviction', 'Active = admitted and not finished (tasks waiting for admission hold no KV). Pooled over K, J, '
+                              'delays and arrivals, so load is a confounder: descriptive, not controlled. Points need ≥ 10 continuations.')
+    return g['mean'].unstack('bin').reindex(servers), g['count'].unstack('bin').reindex(servers)
+
+
+@section
+def fig_context_cost(macro):
+    req = main_condition(macro['requests'])
+    cont = req[(req.step > 0) & (req.status == 'ok') & (req.P == 2) & (req.k == 2) & (~req.kv_unified)
+               & (req.cache_ram_mib == 0)].copy()
+    if cont.empty:
+        return None
+    prefix = shared_prefix_tokens() or 0
+    cont['prefill_s'] = cont.prompt_ms / 1000
+    cont['hit'] = cont.full_history_hit == 1
+    edges = np.arange(cont.input_tokens.min() // 1000 * 1000, cont.input_tokens.max() + 1000, 1000)
+    cont['ctx'] = pd.cut(cont.input_tokens, edges, right=False)
+    med = cont.groupby(['hit', 'ctx'], observed=True).prefill_s.median().unstack('hit')
+    mids = [b.left + 500 for b in med.index]
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4.8))
+    for hit, color, name in [(True, COLORS[0], 'history reused'), (False, COLORS[1], 'history re-prefilled')]:
+        s = cont[cont.hit == hit]
+        axes[0].scatter(s.input_tokens, s.prefill_s, s=9, alpha=.35, color=color)
+        if hit in med:
+            axes[0].plot(mids, med[hit], marker='o', color=color, mec='#333', lw=2, label=f'{name} (median per 1K)')
+    axes[0].set(xlabel='context length at the step (tokens)', ylabel='prefill time of the step (s)',
+                title='A miss costs more the longer the history')
+    axes[0].legend(frameon=False, fontsize=8)
+    miss = cont[~cont.hit]
+    axes[1].scatter(miss.input_tokens, miss.prompt_n, s=9, alpha=.4, color=COLORS[1], label='misses')
+    x = np.array([cont.input_tokens.min(), cont.input_tokens.max()])
+    axes[1].plot(x, x - prefix, color='#333', lw=1.2, ls='--', label=f'context − {prefix:,}-token shared prefix')
+    axes[1].set(xlabel='context length at the step (tokens)', ylabel='tokens prefilled on a miss',
+                title='What a miss recomputes: the task-specific history')
+    axes[1].legend(frameon=False, fontsize=8)
+    fig.suptitle('F13  Context growth: hits stay cheap, misses grow with the history', x=.01, ha='left', weight='bold')
+    fig.tight_layout(rect=[0, .05, 1, .93])
+    save(fig, 'f13_context_cost', 'P2·24K K2 (J∞ and J2), main condition, all repeats. Prefill time includes sharing the batch '
+                                  'with the other slot; the shared system prompt usually survives a miss in the slot.')
+    slope = np.polyfit(miss.prompt_n, miss.prefill_s, 1)[0] if len(miss) > 2 else np.nan
+    return dict(median=med, hit_s=cont[cont.hit].prefill_s.median(), slope=slope, misses=len(miss),
+                continuations=len(cont), prefix=prefix, recompute_median=miss.prompt_n.median())
+
+
+@section
+def fig_kv_demand(macro):
+    runs = main_condition(macro['runs'])
+    runs = runs[(runs.P == 2) & (runs.k == 2) & (~runs.kv_unified) & (runs.cache_ram_mib == 0) & runs.j.isin([0, 2])]
+    if runs.empty:
+        return None
+    req, jobs = macro['requests'], macro['jobs']
+    rows, curves = [], {}
+    for r in runs.itertuples():
+        d = kv_demand(req[req.label == r.label], jobs[jobs.label == r.label])
+        widths = np.diff(d.t_s.to_numpy())
+        curves[r.label] = d
+        rows.append(dict(label=r.label, config=r.config, repeat=r.repeat, budget=r.ctx_size, peak=d.tokens.max(),
+                         over=time_over(d, r.ctx_size), mean_active=np.average(d.active[:-1], weights=widths),
+                         hit_rate=r.hit_rate, jobs_per_min=r.jobs_per_min))
+    tab = pd.DataFrame(rows).sort_values(['repeat', 'config'])
+    fifo = tab[tab.config == 'P2·24K K2 J∞']
+    if fifo.empty:
+        return tab
+    repeat = fifo.sort_values('over').repeat.iloc[-1]   # the repeat where FIFO is under the most pressure
+    shown = tab[tab.repeat == repeat].sort_values('config', ascending=False)
+    fig, axes = plt.subplots(len(shown), 1, figsize=(14, 2.6 * len(shown) + .6), sharex=True, sharey=True, squeeze=False)
+    for ax, r, color in zip(axes[:, 0], shown.itertuples(), [COLORS[1], COLORS[0]]):
+        d = curves[r.label]
+        ax.fill_between(d.t_s, d.tokens / 1000, step='post', color=color, alpha=.35, lw=0)
+        ax.step(d.t_s, d.tokens / 1000, where='post', color=color, lw=1.4)
+        ax.axhline(r.budget / 1000, color='#333', ls='--', lw=1)
+        ax.text(0, r.budget / 1000, f' KV budget {r.budget:,} tokens', va='bottom', fontsize=8)
+        ax.set(ylabel='thousand tokens', title=f'{r.config}: demand above budget {fmt(r.over * 100, 0, "%")} of the run, '
+                                                f'mean {fmt(r.mean_active, 1)} active tasks, full-history hits {fmt(r.hit_rate * 100, 0, "%")}')
+    axes[-1, 0].set_xlabel('seconds since the first arrival')
+    fig.suptitle(f'F14  Memory pressure in tokens: KV the active tasks need to keep their histories (R{repeat})',
+                 x=.01, ha='left', weight='bold')
+    fig.tight_layout(rect=[0, .05, 1, .93])
+    save(fig, 'f14_kv_demand', 'Demand = sum over admitted, unfinished tasks of prompt (+ generated tokens once the step is '
+                               'done). The pool is preallocated (F7), so demand above the budget means histories are evicted.')
+    return tab
+
+
 # ---------------------------------------------------------------- report
 
 def live_records(split):
@@ -504,7 +621,8 @@ def backend_text(meta_rows):
     return 'CPU only (no GPU offload)' if cpu else 'Metal'
 
 
-def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup=None):
+def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup=None,
+           eviction=None, context=None, demand=None):
     lines = []
     add = lines.append
     meta_rows = meta()
@@ -696,6 +814,15 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
                 'after each launch is the bench warm-up (5 prompt + 16 generated tokens). Neither model load nor the '
                 'warm-up enters any measurement above, so all results describe a warm server; on an edge device that '
                 'starts the server on demand, both would add to the first task.\n')
+        if eviction is not None:
+            add('\n' + eviction_text(*eviction))
+        if context is not None:
+            add('\n' + context_text(context))
+        if demand is not None and not demand.empty:
+            add('\n' + demand_text(demand))
+        noise = section(noise_text)(main)
+        if noise:
+            add('\n' + noise)
         add('\n## 5. Dominant bottleneck\n')
         add(bottleneck_text(macro, micro, cache))
     add('\n## 6. Phase 2 direction\n')
@@ -722,7 +849,9 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
     add('- Replay is append-only and benchmark-derived, not a byte-faithful trace; it does not re-execute customer-service semantics. '
         'Completion means "all recorded steps executed", not task success.\n'
         '- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. '
-        'Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3).\n'
+        'Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3). '
+        + ('Run-to-run noise on identical inputs is in §4.14.\n' if (ROOT.parent / (ROOT.name + '-noise') / 'raw/macro_runs.jsonl').exists()
+           else 'Run-to-run noise on identical inputs is not measured here (`SCOPE=noise` in the pipeline measures it).\n') +
         '- Latency of configurations with failures is over completed tasks only.\n'
         '- Each macro run is 8 tasks starting from erased slots (an empty KV cache), so it includes a ramp-up and a drain; '
         'there is no separate steady-state window, and tasks/min includes the drain tail. Server startup is reported in §4.10.\n'
@@ -740,6 +869,90 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
 
 
 REF_CONFIG = 'P2·24K K2 J∞'
+
+
+def eviction_text(rate, count):
+    rows = [[s] + [f'{fmt(rate.loc[s, b] * 100, 0, "%")} ({int(count.loc[s, b])})' if pd.notna(rate.loc[s, b]) else '–'
+                   for b in rate.columns] for s in rate.index]
+    labels = [str(b) for b in rate.columns][:-1] + [f'{rate.columns[-1]}+']
+    text = '### 4.11 Eviction cliff: hit rate vs active tasks (F12)\n\n'
+    text += table(['server'] + [f'{b} active' for b in labels], rows)
+    text += ('\nFull-history hit rate of continuations (number of continuations), by how many agent tasks were admitted '
+             'and unfinished when the step was dispatched. Pooled over all runs of each server, so it is descriptive. ')
+    if 'P2·24K' in rate.index:
+        p2 = rate.loc['P2·24K']
+        text += (f'With two slots, a returning task finds its history {fmt(p2.get(1) * 100, 0, "%")} of the time when it '
+                 f'is alone and {fmt(p2.get(2) * 100, 0, "%")} with two active tasks, but only '
+                 f'{fmt(p2.get(3) * 100, 0, "%")} with three, and almost never with more. ')
+    text += ('More slots move the cliff to more tasks, at the price of smaller per-slot contexts (§4.3). '
+             'Eviction is set by how many tasks overlap relative to the slots, which is what an admission limit controls.\n')
+    return text
+
+
+def context_text(c):
+    text = '### 4.12 Context growth and the cost of a miss (F13)\n\n'
+    med = c['median']
+    rows = [[f'{b.left:,}–{b.right - 1:,}', fmt(med.loc[b].get(True, np.nan), 1), fmt(med.loc[b].get(False, np.nan), 1)]
+            for b in med.index]
+    text += table(['context tokens', 'median prefill s, history reused', 'median prefill s, history re-prefilled'], rows)
+    text += (f'\nP2·24K K2, main condition: {c["continuations"]} continuations, {c["misses"]} misses. A step that reuses its '
+             f'history prefills only its new tokens (median {fmt(c["hit_s"], 1)} s overall). A miss usually keeps '
+             f'the {c["prefix"]:,}-token shared prefix in the slot and recomputes the task-specific history (median '
+             f'{fmt(c["recompute_median"], 0)} tokens), at about {fmt(c["slope"] * 1000, 1)} s per 1,000 tokens under contention. '
+             'The cost of each eviction therefore grows roughly linearly as the task\'s context grows, while a hit stays a '
+             'matter of its new tokens and of sharing the batch. This is observational: long '
+             'contexts are also late steps of long tasks, which overlap more other tasks; a controlled growth sweep is future work.\n')
+    return text
+
+
+def demand_text(tab):
+    text = '### 4.13 Memory pressure in tokens (F14)\n\n'
+    text += table(['config', 'repeat', 'peak demand (tokens)', 'time above the 24K budget', 'mean active tasks',
+                   'full-history hit', 'tasks/min'],
+                  [[r.config, f'R{r.repeat}', f'{int(r.peak):,}', fmt(r.over * 100, 0, '%'), fmt(r.mean_active, 1),
+                    fmt(r.hit_rate * 100, 0, '%'), fmt(r.jobs_per_min, 3)] for r in tab.itertuples()])
+    text += ('\nDemand is the KV the admitted tasks would need to keep their whole histories resident. Resident memory '
+             'cannot show this (F7: the pool is preallocated), but the demand can: under FIFO it exceeds the budget whenever '
+             'several tasks overlap, and every token above the budget belongs to a history that must be evicted and later '
+             're-prefilled. With partitioned slots eviction starts even earlier, as soon as more tasks than slots are active '
+             '(F12). With J = 2 the demand never exceeds two histories, which always fit.\n')
+    return text
+
+
+def noise_text(main):
+    """Run-to-run noise from <results>-noise: trials replay one repeat with identical inputs."""
+    root = ROOT.parent / (ROOT.name + '-noise')
+    if not (root / 'raw/macro_runs.jsonl').exists():
+        return None
+    rows = trial_rows(root)
+    summary = spread(rows)
+    summary['config'] = summary.apply(config_name, axis=1)
+    text = '### 4.14 Run-to-run noise (same inputs, repeated)\n\n'
+    text += table(['config', 'repeat', 'trials', 'completed', 'tasks/min mean ± SD', 'CV', 'min–max', 'P50 s (CV)',
+                   'history hit', 'vs FIFO, per trial'],
+                  [[r.config, f'R{int(r.repeat)}', r.trials, f'{int(rows[rows.j == r.j].completed.sum())}/{int(rows[rows.j == r.j].tasks.sum())}',
+                    f'{fmt(r.jobs_per_minute_mean, 3)} ± {fmt(r.jobs_per_minute_sd, 3)}', fmt(r.jobs_per_minute_cv * 100, 1, '%'),
+                    f'{fmt(r.jobs_per_minute_min, 3)}–{fmt(r.jobs_per_minute_max, 3)}',
+                    f'{fmt(r.p50_s_mean, 0)} ({fmt(r.p50_s_cv * 100, 0, "%")})', fmt(r.full_history_hit_rate_mean * 100, 0, '%'),
+                    ', '.join(fmt(v, 2, '×') for v in rows[rows.j == r.j].sort_values('trial').vs_fifo)]
+                   for r in summary.itertuples()])
+    machines = sorted({json.dumps(m.get('platform'), sort_keys=True) for m in
+                       [json.loads(s) for s in (root / 'raw/runs_meta.jsonl').read_text().splitlines() if s]}) \
+        if (root / 'raw/runs_meta.jsonl').exists() else []
+    cv = summary.jobs_per_minute_cv.max()
+    text += (f'\nEach trial replays repeat R{int(summary.repeat.iloc[0])} with identical tasks, arrivals and tool delays '
+             f'after a server restart, alternating which configuration runs first; trials are in `{root}`. The largest '
+             f'coefficient of variation of tasks/min is {fmt(cv * 100, 1, "%")}, so a paired difference within one repeat '
+             f'needs to exceed roughly {fmt(2 * cv * 100, 0, "%")} (2 SD) to stand out from run-to-run noise.')
+    _, ratio = paired_throughput(main)
+    if ratio is not None and np.isfinite(cv):
+        small = [f'{c} R{r} ({fmt(ratio.loc[c, r], 2, "×")})' for c in ratio.index for r in ratio.columns
+                 if c != REF_CONFIG and pd.notna(ratio.loc[c, r]) and abs(ratio.loc[c, r] - 1) < 2 * cv]
+        if small:
+            text += ' Paired differences in §4.3 within that band: ' + ', '.join(small) + '.'
+    if len(machines) == 1 and machines[0] != 'null':
+        text += f' Trials ran on: `{machines[0]}`; compare only with runs from the same machine.'
+    return text + '\n'
 
 
 def paired_throughput(main):
@@ -831,7 +1044,7 @@ def main():
     micro = fig_micro()
     cache = fig_cache()
     macro = section(load_macro)()
-    parts = memory = gap_tab = arrival_tab = fairness = None
+    parts = memory = gap_tab = arrival_tab = fairness = eviction = context = demand = None
     if macro is not None:
         fig_main(macro)
         parts = fig_breakdown(macro)
@@ -843,8 +1056,12 @@ def main():
                                 'f11_arrival', 'F11  Effect of arrival rate (P2 K2)', 'Poisson arrivals; tool delay log-normal median 2 s.')
         fairness = fig_fairness(macro)
         fig_timeline(macro)
+        eviction = fig_eviction(macro)
+        context = fig_context_cost(macro)
+        demand = fig_kv_demand(macro)
     startup = load_startup()
-    report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup)
+    report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup,
+           eviction, context, demand)
     print('Wrote', ROOT / 'PHASE1_REPORT.md', 'and figures in', FIG, '| notes:', NOTES or 'none')
 
 
