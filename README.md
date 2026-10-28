@@ -108,19 +108,51 @@ directory and count it as extra repeats.
 
 ## Moving to AWS (CPU)
 
-Keep the same model SHA-256, workload files, runtime commit, KV precision and code. Build
-`llama-server` from the same commit on Linux:
+Keep the same model SHA-256, workload files, runtime commit, KV precision and code. The
+pipeline reuses the frozen workloads in `runs/final` (`WORKLOADS=runs/final`), so replays never
+call DeepSeek and no key goes to the instance.
+
+**1. Copy the repo to the instance** (from the laptop). Include `.git` so every run records its
+commit; never copy credentials:
 
 ```bash
-git clone https://github.com/ggml-org/llama.cpp && git -C llama.cpp checkout 620d2225c
-cmake -S llama.cpp -B llama.cpp/build -DCMAKE_BUILD_TYPE=Release
-cmake --build llama.cpp/build -j --target llama-server
-export PATH="$PWD/llama.cpp/build/bin:$PATH"
-.venv/bin/python -m phase1.server --cpu --threads 8 --results-dir runs/aws
-.venv/bin/python -m phase1.bench macro --workload runs/final/workload_eval.json --results-dir runs/aws
+rsync -az --exclude .venv --exclude models --exclude third_party --exclude API.md --exclude '.env*' \
+  ./ ubuntu@<host>:memory-aware-agent-edge-serving/
 ```
 
-- Replays never call DeepSeek.
-- Calibrate threads and arrival rates to the instance.
-- Record the instance type and build flags.
+**2. Build `llama-server` and set up** (on the instance, Ubuntu 24.04), then follow
+[Setup](#setup); on Linux check the model with `sha256sum -c` instead of `shasum -a 256 -c`:
+
+```bash
+sudo apt-get update && sudo apt-get install -y build-essential cmake git curl libcurl4-openssl-dev tmux
+curl -LsSf https://astral.sh/uv/install.sh | sh && source ~/.local/bin/env
+cd ~/memory-aware-agent-edge-serving
+git clone https://github.com/ggml-org/llama.cpp third_party/llama.cpp && git -C third_party/llama.cpp checkout 620d2225c
+cmake -S third_party/llama.cpp -B third_party/llama.cpp/build -DCMAKE_BUILD_TYPE=Release
+cmake --build third_party/llama.cpp/build -j --target llama-server
+```
+
+**3. Pilot, then the full sweep**, inside tmux (`tmux new -s sweep`; detach with `Ctrl-b d`):
+
+```bash
+export PATH="$PWD/third_party/llama.cpp/build/bin:$PATH"
+# Pilot (~1 h, own directory): sets TIMEOUT and threads, and estimates the full run.
+WORKLOADS=runs/final OUT=runs/aws-pilot DEV=runs/aws-pilot-dev SERVER_ARGS="--cpu --threads 8" \
+  TIMEOUT=1800 HOURS=1 bash scripts/overnight.sh
+# Full sweep. Resumable: experiments skipped at the deadline run on the next invocation.
+WORKLOADS=runs/final OUT=runs/aws DEV=runs/aws-dev SERVER_ARGS="--cpu --threads 8" \
+  TIMEOUT=1800 HOURS=9 STOP_WHEN_DONE=1 bash scripts/overnight.sh
+tail -f runs/aws/logs/pipeline.log
+```
+
+**4. Copy results back** (from the laptop) and commit them there:
+`rsync -az ubuntu@<host>:memory-aware-agent-edge-serving/runs/aws/ runs/aws/` (same for `runs/aws-dev/`).
+
+- `--threads` = physical cores: on Graviton every vCPU is a core; on Intel/AMD it is half the
+  vCPUs (check `lscpu`).
+- Budget: (HOURS + 0.5) × the hourly price must stay under the daily limit. `STOP_WHEN_DONE=1`
+  powers the instance off when the pipeline ends, and at the latest 30 min after the deadline;
+  a stopped instance still pays for its disk.
+- Calibrate arrival rates to the instance after the pilot: a k× slower machine at the same
+  arrival rate runs a more heavily loaded experiment.
 - Compare configurations within one platform; never mix Mac and AWS absolute speeds.

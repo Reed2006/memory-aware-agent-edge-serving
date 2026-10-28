@@ -3,32 +3,48 @@
 # Runs sequentially (never two experiments on the server at once). Each experiment is
 # skipped, not truncated, once HOURS have elapsed; the report is regenerated after every round.
 # Resumable: captures, micro/cache and logged macro runs are skipped on re-run.
-# Usage: nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
+# Usage (Mac):  nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
+# Usage (Linux/EC2, CPU), inside tmux:
+#   WORKLOADS=runs/final OUT=runs/aws DEV=runs/aws-dev SERVER_ARGS="--cpu --threads 8" \
+#     TIMEOUT=1800 HOURS=9 STOP_WHEN_DONE=1 bash scripts/overnight.sh
+# Environment:
+#   WORKLOADS       reuse this directory's frozen workload_{eval,dev}.json and skip live capture
+#                   (no DeepSeek key needed); unset = capture live as on the Mac
+#   SERVER_ARGS     extra phase1.server arguments for every launch, e.g. "--cpu --threads 8"
+#   TIMEOUT         per-request HTTP deadline in seconds (raise it for slow CPU prefill)
+#   STOP_WHEN_DONE  1 = power the machine off when the pipeline ends, and at the latest
+#                   HOURS + 30 min after start (needs passwordless sudo, as on EC2)
 set -u
 cd "$(dirname "$0")/.."
 OUT=${OUT:-runs/final}
 DEV=${DEV:-runs/final-dev}
 PY=.venv/bin/python
 HOURS=${HOURS:-9}
+WORKLOADS=${WORKLOADS:-}
+SERVER_ARGS=${SERVER_ARGS:-}
+TIMEOUT=${TIMEOUT:-600}
+STOP_WHEN_DONE=${STOP_WHEN_DONE:-0}
 DEADLINE=$(( $(date +%s) + HOURS * 3600 ))
 mkdir -p "$OUT/logs" "$OUT/raw" "$DEV/raw"
 exec >> "$OUT/logs/pipeline.log" 2>&1
 
 log() { echo "[$(date '+%F %T')] $*"; }
 in_time() { [ "$(date +%s)" -lt "$DEADLINE" ]; }
+clock() { date -r "$1" '+%F %T' 2>/dev/null || date -d "@$1" '+%F %T'; }  # BSD, then GNU date
 
 server() {  # server <args...>: restart llama-server with this configuration
   $PY -m phase1.server stop
-  log "server $*"
-  $PY -m phase1.server --results-dir "$OUT" "$@" || { log "SERVER START FAILED $*"; return 1; }
-  pmset -g batt | head -1
+  log "server $SERVER_ARGS $*"
+  # SERVER_ARGS is split into words on purpose.
+  $PY -m phase1.server --results-dir "$OUT" $SERVER_ARGS "$@" || { log "SERVER START FAILED $*"; return 1; }
+  if command -v pmset > /dev/null; then pmset -g batt | head -1; fi
 }
 
 bench() {  # bench <results-dir> <bench args...>
   local dir=$1; shift
   if ! in_time; then log "SKIP (deadline) $*"; return; fi
   log "bench $*"
-  $PY -m phase1.bench "$@" --results-dir "$dir" --timeout 600 || log "BENCH FAILED $*"
+  $PY -m phase1.bench "$@" --results-dir "$dir" --timeout "$TIMEOUT" || log "BENCH FAILED $*"
   sleep 2
 }
 
@@ -37,14 +53,24 @@ report() {
   $PY -m phase1.final --results-dir "$OUT" || log "REPORT FAILED"
 }
 
-log "=== pipeline start, deadline $(date -r $DEADLINE '+%F %T'), commit $(git rev-parse --short HEAD)"
+log "=== pipeline start, deadline $(clock $DEADLINE), commit $(git rev-parse --short HEAD)"
+if [ "$STOP_WHEN_DONE" = 1 ]; then
+  sudo shutdown -h +$(( HOURS * 60 + 30 )) && log "machine will stop by $(clock $(( DEADLINE + 1800 )))"
+fi
 
 # ---- 1. live capture (resumes: existing task files are skipped) -------------------
 server --parallel 2 --ctx-size 24576
-log "capture test 20"
-$PY -m phase1.capture --split test --count 20 --max-steps 40 --results-dir "$OUT" || log "CAPTURE TEST FAILED"
-log "capture train 10"
-$PY -m phase1.capture --split train --count 10 --max-steps 40 --results-dir "$OUT" || log "CAPTURE TRAIN FAILED"
+if [ -n "$WORKLOADS" ]; then
+  for name in workload_eval.json workload_dev.json; do
+    [ -s "$OUT/$name" ] || cp "$WORKLOADS/$name" "$OUT/$name"
+  done
+  log "workloads from $WORKLOADS; live capture skipped"
+else
+  log "capture test 20"
+  $PY -m phase1.capture --split test --count 20 --max-steps 40 --results-dir "$OUT" || log "CAPTURE TEST FAILED"
+  log "capture train 10"
+  $PY -m phase1.capture --split train --count 10 --max-steps 40 --results-dir "$OUT" || log "CAPTURE TRAIN FAILED"
+fi
 
 [ -s "$OUT/workload_eval.json" ] || $PY - "$OUT" <<'EOF'
 import json, sys
@@ -112,3 +138,7 @@ fi
 $PY -m phase1.server stop
 report
 log "=== pipeline done"
+if [ "$STOP_WHEN_DONE" = 1 ]; then
+  log "stopping the machine in 2 minutes"
+  sudo shutdown -h +2
+fi
