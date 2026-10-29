@@ -66,6 +66,13 @@ def arrival_times(spec: str, count: int, seed: int) -> list[float]:
             times.append(now)
             now += rng.expovariate(rate_per_s)
         return times
+    if kind == 'scaled':
+        # The repeat's poisson:1 pattern compressed to RATE tasks/min, so only the rate changes
+        # between scaled specs (poisson:RATE draws a new pattern). scaled:1 == poisson:1.
+        rate = float(params[0])
+        if rate <= 0:
+            raise ValueError(f'Arrival rate must be positive: {spec!r}')
+        return [t / rate for t in arrival_times('poisson:1', count, seed)]
     raise ValueError(f'Unknown arrival spec {spec!r}')
 
 
@@ -431,7 +438,8 @@ def main():
     parser.add_argument('--jobs-active', type=lambda s: [int(x) for x in s.split(',')], default=[0],
                         help='Task admission limits J; 0 = unlimited')
     parser.add_argument('--gap', type=lambda s: s.split(','), default=['lognormal:2:1'])
-    parser.add_argument('--arrival', type=lambda s: s.split(','), default=['poisson:1'])
+    parser.add_argument('--arrival', type=lambda s: s.split(','), default=['poisson:1'],
+                        help='batch | poisson:TASKS_PER_MIN | scaled:TASKS_PER_MIN (poisson:1 pattern compressed)')
     parser.add_argument('--steps-limit', type=int, default=0, help='Smoke tests only')
     parser.add_argument('--trial', type=int, default=0,
                         help='Re-run index for noise runs: same repeat inputs, label suffix -T<n>; 0 = none')

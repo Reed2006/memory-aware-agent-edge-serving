@@ -30,6 +30,16 @@ def test_arrivals_batch_and_poisson():
     assert arrival_times('poisson:6', 10, 1) == arrival_times('poisson:6', 10, 1)
 
 
+def test_scaled_arrivals_compress_one_pattern():
+    base = arrival_times('poisson:1', 8, 291)
+    assert arrival_times('scaled:1', 8, 291) == base
+    assert arrival_times('scaled:4', 8, 291) == pytest.approx([t / 4 for t in base])
+    assert arrival_times('scaled:4', 8, 292) != arrival_times('scaled:4', 8, 291)   # repeats still differ
+    assert arrival_times('poisson:4', 8, 291) != pytest.approx([t / 4 for t in base])  # poisson:R redraws
+    with pytest.raises(ValueError):
+        arrival_times('scaled:0', 8, 291)
+
+
 def test_job_sources_are_balanced():
     tasks = ['a', 'b', 'c']
     jobs = job_sources(tasks, 7, 3)
