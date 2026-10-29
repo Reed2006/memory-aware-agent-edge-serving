@@ -1,5 +1,8 @@
 """Per-configuration macro summary: completion, tail latency, wasted prefill and fairness.
 
+Tasks/min: runs of the same repeat (trials, identical inputs) are averaged first; mean and
+SD are then across repeats, and jobs_per_min_trial_sd is the pooled within-repeat SD.
+
 Slowdown = job latency (arrival -> done, admission wait included) divided by
 (isolated compute time of the same source task + this job's own tool delays).
 Isolated compute = median(service - tool delays) over J=1, K=1 runs of that task,
@@ -57,6 +60,7 @@ def summarize(root: Path) -> pd.DataFrame:
     for frame in (jobs, runs, requests):
         frame['j'] = frame['j'].fillna(0).astype(int)
         frame['steps_limit'] = frame['steps_limit'].fillna(0).astype(int)
+    runs['trial'] = runs['trial'].fillna(0).astype(int) if 'trial' in runs else 0
     requests = request_metrics(requests)
     reference = isolated_compute(jobs)
     keys = list(zip(jobs.steps_limit, jobs.task_id))
@@ -69,11 +73,17 @@ def summarize(root: Path) -> pd.DataFrame:
         run_group = runs.merge(group[['label']].drop_duplicates(), on='label')
         req = requests.merge(group[['label']].drop_duplicates(), on='label')
         long = done.expected_output_tokens > long_cut
+        # Trials replay one repeat's inputs: average them first, so the SD is across repeats (task
+        # mixes) as with one trial, and report the within-repeat spread separately as noise.
+        per_repeat = run_group.groupby('repeat').jobs_per_minute
         rows.append(dict(
-            zip(CONFIG, config), runs=group.label.nunique(), submitted=len(group), completed=len(done),
+            zip(CONFIG, config), runs=group.label.nunique(), repeats=run_group.repeat.nunique(),
+            trials=int(per_repeat.size().max()) if len(run_group) else 0,
+            submitted=len(group), completed=len(done),
             failed=len(group) - len(done),
             failure_types=';'.join(sorted(group[group.status != 'ok'].status.unique())),
-            jobs_per_min_mean=run_group.jobs_per_minute.mean(), jobs_per_min_sd=run_group.jobs_per_minute.std(),
+            jobs_per_min_mean=per_repeat.mean().mean(), jobs_per_min_sd=per_repeat.mean().std(),
+            jobs_per_min_trial_sd=np.sqrt(per_repeat.var().mean()),
             p50_s=done.latency_s.median(), p95_s=done.latency_s.quantile(.95), p99_s=done.latency_s.quantile(.99),
             admission_wait_mean_s=group.admission_wait_s.mean(),
             fifo_wait_mean_s=req.queue_s.mean(), fifo_wait_p95_s=req.queue_s.quantile(.95),

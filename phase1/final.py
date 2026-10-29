@@ -115,6 +115,7 @@ def load_macro():
             arrival=group.arrival.iloc[0], P=group.P.iloc[0], k=group.k.iloc[0], j=group.j.iloc[0],
             ctx_size=group.ctx_size.iloc[0], kv_unified=group.kv_unified.iloc[0],
             cache_ram_mib=group.cache_ram_mib.iloc[0], repeat=group.repeat.iloc[0],
+            trial=int(meta['trial']) if meta is not None and pd.notna(meta.get('trial')) else 0,
             submitted=len(group), completed=len(done),
             jobs_per_min=meta['jobs_per_minute'] if meta is not None else np.nan,
             makespan_s=meta['makespan_s'] if meta is not None else np.nan,
@@ -122,8 +123,22 @@ def load_macro():
             slowdown=done.slowdown.mean(),
             wasted_frac=per_job.loc[label, 'wasted'] / per_job.loc[label, 'prefill_tokens'] if label in per_job.index and per_job.loc[label, 'prefill_tokens'] else np.nan,
             hit_rate=per_job.loc[label, 'hit_rate'] if label in per_job.index else np.nan))
-    return dict(jobs=jobs, requests=requests, runs=pd.DataFrame(run_rows),
+    trial_runs = pd.DataFrame(run_rows).sort_values('trial')
+    return dict(jobs=jobs, requests=requests, runs=average_trials(trial_runs), trial_runs=trial_runs,
                 summary=pd.read_csv(ROOT / 'summary/sweep_summary.csv'))
+
+
+RUN_KEYS = ['config', 'gap_mode', 'arrival', 'P', 'k', 'j', 'ctx_size', 'kv_unified', 'cache_ram_mib', 'repeat']
+RUN_METRICS = ['jobs_per_min', 'makespan_s', 'p50', 'p95', 'slowdown', 'wasted_frac', 'hit_rate']
+
+
+def average_trials(trial_runs):
+    """One row per configuration and repeat: trials replay identical inputs, so they are averaged
+    (counts summed); jobs_per_min_tsd is their spread. `label` is the first trial's run."""
+    agg = dict(label=('label', 'first'), trials=('label', 'size'), submitted=('submitted', 'sum'),
+               completed=('completed', 'sum'), jobs_per_min_tsd=('jobs_per_min', 'std'),
+               **{m: (m, 'mean') for m in RUN_METRICS})
+    return trial_runs.groupby(RUN_KEYS, as_index=False, dropna=False).agg(**agg)
 
 
 def main_condition(frame):
@@ -143,8 +158,10 @@ def per_repeat_bars(ax, runs, configs, metric, scale=1.0):
     width = .8 / len(repeats)
     x = np.arange(len(configs))
     for i, r in enumerate(repeats):
-        vals = runs[runs.repeat == r].set_index('config')[metric].reindex(configs) * scale
-        ax.bar(x + (i - (len(repeats) - 1) / 2) * width, vals, width * .95,
+        rows = runs[runs.repeat == r].set_index('config').reindex(configs)
+        # Error bars: spread over trials of the same repeat, when trials were run.
+        err = rows[f'{metric}_tsd'] * scale if f'{metric}_tsd' in rows and rows[f'{metric}_tsd'].notna().any() else None
+        ax.bar(x + (i - (len(repeats) - 1) / 2) * width, rows[metric] * scale, width * .95, yerr=err, capsize=2,
                color=REPEAT_COLORS[i % len(REPEAT_COLORS)], label=f'R{r}')
     ax.set_xticks(x, configs, rotation=35, ha='right', fontsize=8)
 
@@ -334,7 +351,7 @@ def fig_memory(macro):
     res = read_jsonl('resources.jsonl')
     if res.empty:
         return None
-    runs = macro['runs']
+    runs = macro['trial_runs']   # every run, so the samples of all trials are kept
     res = res.merge(runs[['label', 'config', 'ctx_size', 'cache_ram_mib', 'P', 'kv_unified']], on='label')
     if res.empty:
         return None
@@ -528,7 +545,7 @@ def fig_context_cost(macro):
 
 @section
 def fig_kv_demand(macro):
-    runs = main_condition(macro['runs'])
+    runs = main_condition(macro['trial_runs'])
     runs = runs[(runs.P == 2) & (runs.k == 2) & (~runs.kv_unified) & (runs.cache_ram_mib == 0) & runs.j.isin([0, 2])]
     if runs.empty:
         return None
@@ -538,15 +555,20 @@ def fig_kv_demand(macro):
         d = kv_demand(req[req.label == r.label], jobs[jobs.label == r.label])
         widths = np.diff(d.t_s.to_numpy())
         curves[r.label] = d
-        rows.append(dict(label=r.label, config=r.config, repeat=r.repeat, budget=r.ctx_size, peak=d.tokens.max(),
-                         over=time_over(d, r.ctx_size), mean_active=np.average(d.active[:-1], weights=widths),
-                         hit_rate=r.hit_rate, jobs_per_min=r.jobs_per_min))
-    tab = pd.DataFrame(rows).sort_values(['repeat', 'config'])
+        rows.append(dict(label=r.label, config=r.config, repeat=r.repeat, trial=r.trial, budget=r.ctx_size,
+                         peak=d.tokens.max(), over=time_over(d, r.ctx_size),
+                         mean_active=np.average(d.active[:-1], weights=widths), hit_rate=r.hit_rate, jobs_per_min=r.jobs_per_min))
+    per_run = pd.DataFrame(rows)
+    tab = per_run.groupby(['config', 'repeat'], as_index=False).agg(
+        trials=('label', 'size'), budget=('budget', 'first'), peak=('peak', 'mean'), over=('over', 'mean'),
+        mean_active=('mean_active', 'mean'), hit_rate=('hit_rate', 'mean'), jobs_per_min=('jobs_per_min', 'mean'))
+    tab = tab.sort_values(['repeat', 'config'])
     fifo = tab[tab.config == 'P2·24K K2 J∞']
     if fifo.empty:
         return tab
     repeat = fifo.sort_values('over').repeat.iloc[-1]   # the repeat where FIFO is under the most pressure
-    shown = tab[tab.repeat == repeat].sort_values('config', ascending=False)
+    # Plot the first trial of each configuration in that repeat.
+    shown = per_run[per_run.repeat == repeat].sort_values('trial').drop_duplicates('config').sort_values('config', ascending=False)
     fig, axes = plt.subplots(len(shown), 1, figsize=(14, 2.6 * len(shown) + .6), sharex=True, sharey=True, squeeze=False)
     for ax, r, color in zip(axes[:, 0], shown.itertuples(), [COLORS[1], COLORS[0]]):
         d = curves[r.label]
@@ -625,6 +647,7 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
            eviction=None, context=None, demand=None):
     lines = []
     add = lines.append
+    noise = None
     meta_rows = meta()
     power = sorted({(m or '').split('\n')[0] for m in meta_rows.get('power', pd.Series(dtype=str)).dropna()})
     commits = sorted(set(meta_rows.get('git_commit', pd.Series(dtype=str)).dropna()))
@@ -710,13 +733,15 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
             rows_out = []
             for c in order_configs(main.config):
                 r = main[main.config == c]
-                rows_out.append([c, len(r), f'{r.completed.sum()}/{r.submitted.sum()}',
+                repeats = f'{len(r)} × {int(r.trials.max())} trials' if r.trials.max() > 1 else len(r)
+                rows_out.append([c, repeats, f'{r.completed.sum()}/{r.submitted.sum()}',
                                  f'{fmt(r.jobs_per_min.mean(), 3)} ± {fmt(r.jobs_per_min.std(), 3)}',
                                  fmt(r.p50.mean(), 0), fmt(r.p95.mean(), 0),
                                  fmt(r.wasted_frac.mean() * 100, 1, '%'), fmt(r.hit_rate.mean() * 100, 1, '%'),
                                  fmt(r.slowdown.mean(), 2)])
             add(table(['config', 'repeats', 'completed', 'tasks/min', 'P50 s', 'P95 s', 'wasted prefill', 'history hit', 'mean slowdown'], rows_out))
-            add('\nTasks/min is mean ± SD across repeats; P50/P95, wasted prefill and hit rate are means of per-run values. '
+            add('\nTasks/min is mean ± SD across repeats' + (' (each repeat first averaged over its trials)' if main.trials.max() > 1 else '')
+                + '; P50/P95, wasted prefill and hit rate are means of per-run values. '
                 'Latency is over completed tasks only, so configurations with failures (P4) look faster than they are: '
                 'the tasks that fail are the long ones.\n')
             pivot, ratio = paired_throughput(main)
@@ -820,7 +845,7 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
             add('\n' + context_text(context))
         if demand is not None and not demand.empty:
             add('\n' + demand_text(demand))
-        noise = section(noise_text)(main)
+        noise = section(noise_text)(main, macro['trial_runs'])
         if noise:
             add('\n' + noise)
         add('\n## 5. Dominant bottleneck\n')
@@ -850,8 +875,8 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
         'Completion means "all recorded steps executed", not task success.\n'
         '- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. '
         'Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3). '
-        + ('Run-to-run noise on identical inputs is in §4.14.\n' if (ROOT.parent / (ROOT.name + '-noise') / 'raw/macro_runs.jsonl').exists()
-           else 'Run-to-run noise on identical inputs is not measured here (`SCOPE=noise` in the pipeline measures it).\n') +
+        + ('Run-to-run noise on identical inputs is in §4.14.\n' if noise
+           else 'Run-to-run noise on identical inputs is not measured here (`TRIALS` or `SCOPE=noise` in the pipeline measures it).\n') +
         '- Latency of configurations with failures is over completed tasks only.\n'
         '- Each macro run is 8 tasks starting from erased slots (an empty KV cache), so it includes a ramp-up and a drain; '
         'there is no separate steady-state window, and tasks/min includes the drain tail. Server startup is reported in §4.10.\n'
@@ -919,8 +944,39 @@ def demand_text(tab):
     return text
 
 
-def noise_text(main):
-    """Run-to-run noise from <results>-noise: trials replay one repeat with identical inputs."""
+def trials_text(trial_runs):
+    """Run-to-run noise when every experiment was run as several trials in this directory."""
+    tr = main_condition(trial_runs)
+    cell = tr.groupby(['config', 'repeat']).jobs_per_min.agg(['size', 'mean', 'std'])
+    cell['cv'] = cell['std'] / cell['mean']
+    fifo = tr[tr.config == REF_CONFIG].set_index(['repeat', 'trial']).jobs_per_min
+    tr = tr.assign(vs=tr.jobs_per_min.to_numpy() / fifo.reindex(pd.MultiIndex.from_frame(tr[['repeat', 'trial']])).to_numpy())
+    rows = []
+    for c in order_configs(tr.config):
+        cv = cell.loc[c].cv
+        paired = []
+        for r, g in tr[tr.config == c].groupby('repeat'):
+            v = g.vs.dropna()
+            if c != REF_CONFIG and len(v):
+                side = ' (all above 1)' if (v > 1).all() else ' (all below 1)' if (v < 1).all() else ''
+                paired.append(f'R{r} {fmt(v.min(), 2)}–{fmt(v.max(), 2)}×{side}')
+        rows.append([c, int(cell.loc[c]['size'].max()), fmt(cv.mean() * 100, 1, '%'), fmt(cv.max() * 100, 1, '%'),
+                     '; '.join(paired) or '–'])
+    text = '### 4.14 Run-to-run noise (every experiment repeated as trials)\n\n'
+    text += table(['config', 'trials per repeat', 'tasks/min CV, mean over repeats', 'max CV', 'vs FIFO per trial, range per repeat'], rows)
+    worst = cell.cv.max()
+    text += ('\nTrials replay a repeat with identical tasks, arrivals and tool delays, so their spread is run-to-run noise; '
+             'the tables above average them first. Each trial restarted the servers and ran the configurations in a rotated '
+             f'order. The largest CV of tasks/min is {fmt(worst * 100, 1, "%")}: a paired difference smaller than about '
+             f'{fmt(2 * worst * 100, 0, "%")} in a single run would not be distinguishable from noise. A comparison is '
+             'consistent when every trial falls on the same side of FIFO.\n')
+    return text
+
+
+def noise_text(main, trial_runs=None):
+    """Run-to-run noise: trials in this directory, else from <results>-noise (one repeat replayed)."""
+    if trial_runs is not None and trial_runs.trial.nunique() > 1:
+        return trials_text(trial_runs)
     root = ROOT.parent / (ROOT.name + '-noise')
     if not (root / 'raw/macro_runs.jsonl').exists():
         return None
@@ -1052,8 +1108,13 @@ def main():
         memory = fig_memory(macro)
         gap_tab = fig_sweep(macro, 'gap_mode', ['zero', MAIN_GAP, 'fixed:15'], ['none', 'log-normal med 2 s', 'fixed 15 s'],
                             'f10_tool_delay', 'F10  Effect of tool idle time (P2 K2)', 'Same arrivals and tasks; only the delay between steps changes.')
-        arrival_tab = fig_sweep(macro, 'arrival', ['poisson:0.5', MAIN_ARRIVAL, 'poisson:2'], ['0.5/min', '1/min', '2/min'],
-                                'f11_arrival', 'F11  Effect of arrival rate (P2 K2)', 'Poisson arrivals; tool delay log-normal median 2 s.')
+        if ':' in MAIN_ARRIVAL:
+            kind, rate = MAIN_ARRIVAL.split(':')
+            rates = [float(rate) / 2, float(rate), float(rate) * 2]   # the pipeline sweeps half and double the main rate
+            pattern = 'one pattern per repeat, compressed' if kind == 'scaled' else 'Poisson arrivals'
+            arrival_tab = fig_sweep(macro, 'arrival', [f'{kind}:{rates[0]:g}', MAIN_ARRIVAL, f'{kind}:{rates[2]:g}'],
+                                    [f'{r:g}/min' for r in rates], 'f11_arrival', 'F11  Effect of arrival rate (P2 K2)',
+                                    f'{pattern}; tool delay log-normal median 2 s.')
         fairness = fig_fairness(macro)
         fig_timeline(macro)
         eviction = fig_eviction(macro)
