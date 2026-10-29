@@ -20,6 +20,7 @@
 #                   rotates the order of server groups and of the P2 cases
 #   ARRIVAL_KIND    poisson (default) or scaled (one pattern per repeat, compressed to the rate)
 #   ARRIVAL_RATE    main arrival rate in tasks/min (default 1); the arrival sweep uses half and double
+#   EXTRA_J         extra task-admission limits for P2 K2 on eval and dev, e.g. "3 4" (default none)
 #   STOP_WHEN_DONE  1 = power the machine off when the pipeline ends, and at the latest
 #                   HOURS + 30 min after start (needs passwordless sudo, as on EC2)
 #   STOP_DELAY_MIN  minutes between the end of the pipeline and the power-off (default 2)
@@ -46,6 +47,7 @@ TIMEOUT=${TIMEOUT:-600}
 TRIALS=${TRIALS:-1}
 ARRIVAL_KIND=${ARRIVAL_KIND:-poisson}
 ARRIVAL_RATE=${ARRIVAL_RATE:-1}
+EXTRA_J=${EXTRA_J:-}
 STOP_WHEN_DONE=${STOP_WHEN_DONE:-0}
 STOP_DELAY_MIN=${STOP_DELAY_MIN:-2}
 SCOPE=${SCOPE:-all}
@@ -184,6 +186,7 @@ report
 round() {  # round <repeat index> <full|core>: every server group and case, once per trial
   local r=$1 scope=$2 t group item
   local p2=("$MAIN --k 2 --jobs-active 0" "$MAIN --k 1 --jobs-active 1" "$MAIN --k 1 --jobs-active 0" "$MAIN --k 2 --jobs-active 2")
+  for j in $EXTRA_J; do p2+=("$MAIN --k 2 --jobs-active $j"); done
   if [ "$scope" = full ]; then
     p2+=("--arrival $ARRIVAL --gap zero --k 2" "--arrival $ARRIVAL --gap fixed:15 --k 2"
          "--gap lognormal:2:1 --arrival $ARRIVAL_HALF --k 2" "--gap lognormal:2:1 --arrival $ARRIVAL_DOUBLE --k 2")
@@ -214,6 +217,7 @@ noise
 
 # ---- 4. dev workload sweep (input to Phase 2 baseline selection) ---------------------
 DEV_CASES=("--k 1 --jobs-active 0" "--k 1 --jobs-active 2" "--k 2 --jobs-active 0" "--k 2 --jobs-active 2")
+for j in $EXTRA_J; do DEV_CASES+=("--k 2 --jobs-active $j"); done
 for (( t = 1; t <= TRIALS; t++ )); do
   in_time || break
   log "=== dev, trial $t of $TRIALS"

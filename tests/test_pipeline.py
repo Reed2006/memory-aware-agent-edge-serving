@@ -68,3 +68,11 @@ def test_defaults_keep_the_original_labels_and_order(tmp_path):
     assert not any('--trial' in c for c in macro)
     assert {a for c in macro for a in ['poisson:0.5', 'poisson:2'] if f'--arrival {a} ' in c} == {'poisson:0.5', 'poisson:2'}
     assert '--k 2 --jobs-active 0' in macro[0]
+
+
+def test_extra_admission_limits_join_p2_and_dev(tmp_path):
+    macro = macro_calls(run_pipeline(tmp_path, NOISE_TRIALS='0', EXTRA_J='3 4'))
+    assert len(macro) == 2 * 14 + 6 + 10 + 2   # rounds 0/1 gain 2 P2 cases, dev 2, round 2 two
+    for j in (3, 4):
+        assert sum(f'--k 2 --jobs-active {j} ' in c and 'workload_eval' in c for c in macro) == 3
+        assert sum(f'--k 2 --jobs-active {j} ' in c and 'workload_dev' in c for c in macro) == 1
