@@ -3,39 +3,59 @@
 # Runs sequentially (never two experiments on the server at once). Each experiment is
 # skipped, not truncated, once HOURS have elapsed; the report is regenerated after every round.
 # Resumable: captures, micro/cache and logged macro runs are skipped on re-run.
-# Usage (Mac):  nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
+# Usage (Mac):  nohup caffeinate -ims bash scripts/overnight.sh > /dev/null 2>&1 &
 # Usage (Linux/EC2, CPU), inside tmux:
 #   WORKLOADS=runs/final OUT=runs/aws DEV=runs/aws-dev SERVER_ARGS="--cpu --threads 8" \
 #     TIMEOUT=1800 HOURS=9 STOP_WHEN_DONE=1 bash scripts/overnight.sh
+# Usage (EC2 GPU, 3 trials of everything, calibrated arrival rate), inside tmux:
+#   TRIALS=3 ARRIVAL_KIND=scaled ARRIVAL_RATE=3 WORKLOADS=runs/final OUT=runs/aws-gpu \
+#     DEV=runs/aws-gpu-dev HOURS=22 STOP_WHEN_DONE=1 STOP_DELAY_MIN=20 bash scripts/overnight.sh
 # Environment:
 #   WORKLOADS       reuse this directory's frozen workload_{eval,dev}.json and skip live capture
 #                   (no DeepSeek key needed); unset = capture live as on the Mac
 #   SERVER_ARGS     extra phase1.server arguments for every launch, e.g. "--cpu --threads 8"
 #   TIMEOUT         per-request HTTP deadline in seconds (raise it for slow CPU prefill)
+#   TRIALS          runs of every macro experiment on identical inputs (default 1). Trial 1 keeps
+#                   the plain label, trials 2..N add -T<n>; each trial restarts the servers and
+#                   rotates the order of server groups and of the P2 cases
+#   ARRIVAL_KIND    poisson (default) or scaled (one pattern per repeat, compressed to the rate)
+#   ARRIVAL_RATE    main arrival rate in tasks/min (default 1); the arrival sweep uses half and double
 #   STOP_WHEN_DONE  1 = power the machine off when the pipeline ends, and at the latest
 #                   HOURS + 30 min after start (needs passwordless sudo, as on EC2)
+#   STOP_DELAY_MIN  minutes between the end of the pipeline and the power-off (default 2)
 #   SCOPE           all (default) = everything below; noise = only the noise trials
 #                   (needs WORKLOADS or an existing $OUT/workload_eval.json; never captures)
-#   NOISE_TRIALS    re-runs of FIFO P2 K2 J∞ and P2 K2 J2 on one repeat (default 3; 0 = off)
+#   NOISE_TRIALS    re-runs of FIFO P2 K2 J∞ and P2 K2 J2 on one repeat into $NOISE
+#                   (default 3, or 0 when TRIALS > 1 since every experiment is then repeated)
 #   NOISE_REPEAT    repeat index the trials replay (default 0)
 #   NOISE           results directory for the trials (default $OUT-noise, kept apart so
 #                   trials are never counted as extra repeats of the main sweep)
 # Noise only, e.g. on another Mac:  SCOPE=noise WORKLOADS=runs/final OUT=runs/m5 HOURS=2 \
-#   nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
+#   nohup caffeinate -ims bash scripts/overnight.sh > /dev/null 2>&1 &
+# Machine state (GPU clocks/power/temperature, or Mac thermal/power) is logged once a minute
+# to $OUT/logs/machine.log.
 set -u
 cd "$(dirname "$0")/.."
 OUT=${OUT:-runs/final}
 DEV=${DEV:-runs/final-dev}
-PY=.venv/bin/python
+PY=${PY:-.venv/bin/python}
 HOURS=${HOURS:-9}
 WORKLOADS=${WORKLOADS:-}
 SERVER_ARGS=${SERVER_ARGS:-}
 TIMEOUT=${TIMEOUT:-600}
+TRIALS=${TRIALS:-1}
+ARRIVAL_KIND=${ARRIVAL_KIND:-poisson}
+ARRIVAL_RATE=${ARRIVAL_RATE:-1}
 STOP_WHEN_DONE=${STOP_WHEN_DONE:-0}
+STOP_DELAY_MIN=${STOP_DELAY_MIN:-2}
 SCOPE=${SCOPE:-all}
 NOISE=${NOISE:-$OUT-noise}
-NOISE_TRIALS=${NOISE_TRIALS:-3}
+NOISE_TRIALS=${NOISE_TRIALS:-$([ "$TRIALS" -gt 1 ] && echo 0 || echo 3)}
 NOISE_REPEAT=${NOISE_REPEAT:-0}
+PAUSE=${PAUSE:-2}
+ARRIVAL="$ARRIVAL_KIND:$ARRIVAL_RATE"
+ARRIVAL_HALF="$ARRIVAL_KIND:$(awk -v r="$ARRIVAL_RATE" 'BEGIN { printf "%g", r / 2 }')"
+ARRIVAL_DOUBLE="$ARRIVAL_KIND:$(awk -v r="$ARRIVAL_RATE" 'BEGIN { printf "%g", r * 2 }')"
 DEADLINE=$(( $(date +%s) + HOURS * 3600 ))
 mkdir -p "$OUT/logs" "$OUT/raw" "$DEV/raw"
 exec >> "$OUT/logs/pipeline.log" 2>&1
@@ -43,6 +63,28 @@ exec >> "$OUT/logs/pipeline.log" 2>&1
 log() { echo "[$(date '+%F %T')] $*"; }
 in_time() { [ "$(date +%s)" -lt "$DEADLINE" ]; }
 clock() { date -r "$1" '+%F %T' 2>/dev/null || date -d "@$1" '+%F %T'; }  # BSD, then GNU date
+trial_arg() { [ "$1" -gt 1 ] && echo "--trial $1"; }  # trial 1 keeps the plain label
+
+rotate() {  # rotate <n> <items...>: print the items rotated left by n, one per line
+  local n=$1; shift
+  local items=("$@") i
+  for (( i = 0; i < $#; i++ )); do echo "${items[$(( (i + n) % $# ))]}"; done
+}
+
+machine_log() {  # once a minute: GPU state on NVIDIA machines, thermal and power state on Macs
+  while true; do
+    if command -v nvidia-smi > /dev/null; then
+      echo "[$(date '+%F %T')] $(nvidia-smi --query-gpu=uuid,clocks.sm,clocks.mem,power.draw,temperature.gpu,utilization.gpu,memory.used \
+        --format=csv,noheader 2>&1) | throttle $(nvidia-smi --query-gpu=clocks_throttle_reasons.active --format=csv,noheader 2>/dev/null)"
+    elif command -v pmset > /dev/null; then
+      echo "[$(date '+%F %T')] $(pmset -g therm 2>&1 | grep -v '^$' | tr '\n' ' ')| $(pmset -g batt | sed -n 2p)"
+    fi
+    sleep 60
+  done >> "$OUT/logs/machine.log" 2>&1
+}
+machine_log &
+MACHINE_LOG=$!
+trap 'kill $MACHINE_LOG 2>/dev/null' EXIT
 
 server() { server_at "$OUT" "$@"; }
 
@@ -60,12 +102,12 @@ bench() {  # bench <results-dir> <bench args...>
   if ! in_time; then log "SKIP (deadline) $*"; return; fi
   log "bench $*"
   $PY -m phase1.bench "$@" --results-dir "$dir" --timeout "$TIMEOUT" || log "BENCH FAILED $*"
-  sleep 2
+  sleep "$PAUSE"
 }
 
 report() {
   $PY -m phase1.summarize --results-dir "$OUT" > "$OUT/logs/summary.txt" 2>&1 || true
-  $PY -m phase1.final --results-dir "$OUT" || log "REPORT FAILED"
+  $PY -m phase1.final --results-dir "$OUT" --main-arrival "$ARRIVAL" || log "REPORT FAILED"
 }
 
 noise() {  # re-run FIFO and J2 on one repeat index: identical inputs, so the spread is run-to-run noise
@@ -86,7 +128,7 @@ noise() {  # re-run FIFO and J2 on one repeat index: identical inputs, so the sp
   $PY -m phase1.noise --results-dir "$NOISE" || log "NOISE SUMMARY FAILED"
 }
 
-log "=== pipeline start, deadline $(clock $DEADLINE), commit $(git rev-parse --short HEAD)"
+log "=== pipeline start, deadline $(clock $DEADLINE), commit $(git rev-parse --short HEAD), trials $TRIALS, arrival $ARRIVAL"
 if [ "$STOP_WHEN_DONE" = 1 ]; then
   sudo shutdown -h +$(( HOURS * 60 + 30 )) && log "machine will stop by $(clock $(( DEADLINE + 1800 )))"
 fi
@@ -120,7 +162,7 @@ EOF
 [ -s "$OUT/workload_eval.json" ] || { log "NO WORKLOAD in $OUT; stopping"; $PY -m phase1.server stop; exit 1; }
 
 EVAL="macro --workload $OUT/workload_eval.json --num-jobs 8 --repeats 1 --skip-done"
-MAIN="--gap lognormal:2:1 --arrival poisson:1"
+MAIN="--gap lognormal:2:1 --arrival $ARRIVAL"
 
 if [ "$SCOPE" = noise ]; then
   noise
@@ -128,7 +170,7 @@ if [ "$SCOPE" = noise ]; then
   # Regenerate the report only where the main sweep lives (it reads $OUT-noise).
   [ -s "$OUT/raw/macro_runs.jsonl" ] && report
   log "=== pipeline done (noise only)"
-  if [ "$STOP_WHEN_DONE" = 1 ]; then sudo shutdown -h +2; fi
+  if [ "$STOP_WHEN_DONE" = 1 ]; then sudo shutdown -h +"$STOP_DELAY_MIN"; fi
   exit 0
 fi
 
@@ -139,25 +181,30 @@ if [ ! -s "$OUT/restore_validation.json" ] && in_time; then $PY -m phase1.check_
 report
 
 # ---- 3. macro rounds on the eval workload ---------------------------------------------
-round() {  # round <repeat index> <full|core>
-  local r=$1 scope=$2
-  log "=== round $r ($scope)"
-  server --parallel 2 --ctx-size 24576 && {
-    bench "$OUT" $EVAL --repeat-start $r $MAIN --k 2 --jobs-active 0
-    bench "$OUT" $EVAL --repeat-start $r $MAIN --k 1 --jobs-active 1
-    bench "$OUT" $EVAL --repeat-start $r $MAIN --k 1 --jobs-active 0
-    bench "$OUT" $EVAL --repeat-start $r $MAIN --k 2 --jobs-active 2
-    if [ "$scope" = full ]; then
-      bench "$OUT" $EVAL --repeat-start $r --arrival poisson:1 --gap zero --k 2
-      bench "$OUT" $EVAL --repeat-start $r --arrival poisson:1 --gap fixed:15 --k 2
-      bench "$OUT" $EVAL --repeat-start $r --gap lognormal:2:1 --arrival poisson:0.5 --k 2
-      bench "$OUT" $EVAL --repeat-start $r --gap lognormal:2:1 --arrival poisson:2 --k 2
-    fi
-  }
-  in_time && server --parallel 1 --ctx-size 24576 && bench "$OUT" $EVAL --repeat-start $r $MAIN --k 1
-  in_time && server --parallel 4 --ctx-size 24576 && bench "$OUT" $EVAL --repeat-start $r $MAIN --k 4
-  in_time && server --parallel 4 --ctx-size 24576 --kv-unified && bench "$OUT" $EVAL --repeat-start $r $MAIN --k 4
-  in_time && server --parallel 2 --ctx-size 24576 --cache-ram 3072 && bench "$OUT" $EVAL --repeat-start $r $MAIN --k 2
+round() {  # round <repeat index> <full|core>: every server group and case, once per trial
+  local r=$1 scope=$2 t group item
+  local p2=("$MAIN --k 2 --jobs-active 0" "$MAIN --k 1 --jobs-active 1" "$MAIN --k 1 --jobs-active 0" "$MAIN --k 2 --jobs-active 2")
+  if [ "$scope" = full ]; then
+    p2+=("--arrival $ARRIVAL --gap zero --k 2" "--arrival $ARRIVAL --gap fixed:15 --k 2"
+         "--gap lognormal:2:1 --arrival $ARRIVAL_HALF --k 2" "--gap lognormal:2:1 --arrival $ARRIVAL_DOUBLE --k 2")
+  fi
+  local groups=("--parallel 2 --ctx-size 24576" "--parallel 1 --ctx-size 24576" "--parallel 4 --ctx-size 24576"
+                "--parallel 4 --ctx-size 24576 --kv-unified" "--parallel 2 --ctx-size 24576 --cache-ram 3072")
+  for (( t = 1; t <= TRIALS; t++ )); do
+    log "=== round $r ($scope), trial $t of $TRIALS"
+    # Rotating by trial means no server group, and no P2 case, always runs first.
+    while read -r -u 3 group; do
+      in_time || break
+      server $group || continue
+      case "$group" in
+        "--parallel 2 --ctx-size 24576")
+          while read -r -u 4 item; do bench "$OUT" $EVAL --repeat-start $r $item $(trial_arg $t); done 4< <(rotate $(( t - 1 )) "${p2[@]}") ;;
+        "--parallel 1 --ctx-size 24576") bench "$OUT" $EVAL --repeat-start $r $MAIN --k 1 $(trial_arg $t) ;;
+        "--parallel 4"*) bench "$OUT" $EVAL --repeat-start $r $MAIN --k 4 $(trial_arg $t) ;;
+        *) bench "$OUT" $EVAL --repeat-start $r $MAIN --k 2 $(trial_arg $t) ;;
+      esac
+    done 3< <(rotate $(( t - 1 )) "${groups[@]}")
+  done
   report
 }
 
@@ -166,17 +213,24 @@ round 1 full
 noise
 
 # ---- 4. dev workload sweep (input to Phase 2 baseline selection) ---------------------
-if in_time; then
-  server --parallel 2 --ctx-size 24576 && \
-    bench "$DEV" macro --workload "$OUT/workload_dev.json" --num-jobs 8 --repeats 1 --skip-done $MAIN --k 1,2 --jobs-active 0,2
-fi
+DEV_CASES=("--k 1 --jobs-active 0" "--k 1 --jobs-active 2" "--k 2 --jobs-active 0" "--k 2 --jobs-active 2")
+for (( t = 1; t <= TRIALS; t++ )); do
+  in_time || break
+  log "=== dev, trial $t of $TRIALS"
+  server --parallel 2 --ctx-size 24576 || continue
+  while read -r -u 3 item; do
+    bench "$DEV" macro --workload "$OUT/workload_dev.json" --num-jobs 8 --repeats 1 --skip-done $MAIN $item $(trial_arg $t)
+  done 3< <(rotate $(( t - 1 )) "${DEV_CASES[@]}")
+done
 
 # ---- 5. third repeat and a larger KV budget if time and memory allow -------------------
 round 2 core
 avail=$($PY -c 'import psutil; print(int(psutil.virtual_memory().available / 2**30))')
 if in_time && [ "$avail" -ge 7 ]; then
-  for r in 0 1; do
-    in_time && server --parallel 4 --ctx-size 36864 && bench "$OUT" $EVAL --repeat-start $r $MAIN --k 4
+  for (( t = 1; t <= TRIALS; t++ )); do
+    for r in 0 1; do
+      in_time && server --parallel 4 --ctx-size 36864 && bench "$OUT" $EVAL --repeat-start $r $MAIN --k 4 $(trial_arg $t)
+    done
   done
 else
   log "skip P4/36K budget (available ${avail} GiB or deadline)"
@@ -186,6 +240,6 @@ $PY -m phase1.server stop
 report
 log "=== pipeline done"
 if [ "$STOP_WHEN_DONE" = 1 ]; then
-  log "stopping the machine in 2 minutes"
-  sudo shutdown -h +2
+  log "stopping the machine in $STOP_DELAY_MIN minutes"
+  sudo shutdown -h +"$STOP_DELAY_MIN"
 fi
