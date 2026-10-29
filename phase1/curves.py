@@ -3,10 +3,19 @@
 All times are the bench's perf_counter seconds, which are comparable within one run
 (one label). Inputs are the frames written by phase1.summarize (sweep_requests.csv,
 sweep_jobs.csv) or the raw JSONL with the same columns.
+
+As a command it prints the contention of every macro run in a results directory, which
+is how an arrival rate is calibrated on a new machine:
+    python -m phase1.curves --results-dir runs/aws-gpu-pilot
 """
+
+import argparse
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from phase1.summarize import read, request_metrics
 
 
 def active_at_dispatch(requests: pd.DataFrame, jobs: pd.DataFrame) -> pd.Series:
@@ -47,3 +56,32 @@ def time_over(demand: pd.DataFrame, budget: int) -> float:
     over = demand.tokens.to_numpy()[:-1] > budget
     total = widths.sum()
     return float(widths[over].sum() / total) if total > 0 else np.nan
+
+
+def contention(root: Path) -> pd.DataFrame:
+    """One row per macro run: time-weighted mean active tasks, share of time with more active
+    tasks than slots, full-history hit rate and tasks/min."""
+    runs, jobs = read(root / 'raw/macro_runs.jsonl'), read(root / 'raw/macro_jobs.jsonl')
+    requests = request_metrics(read(root / 'raw/macro_requests.jsonl'))
+    rows = []
+    for run in runs.itertuples():
+        d = kv_demand(requests[requests.label == run.label], jobs[jobs.label == run.label])
+        widths = np.diff(d.t_s.to_numpy())
+        active = d.active.to_numpy()[:-1]
+        rows.append(dict(label=run.label, tasks_per_min=run.jobs_per_minute, makespan_s=run.makespan_s,
+                         mean_active=np.average(active, weights=widths) if widths.sum() else np.nan,
+                         above_slots=widths[active > run.P].sum() / widths.sum() if widths.sum() else np.nan,
+                         hit_rate=requests[requests.label == run.label].full_history_hit.mean()))
+    return pd.DataFrame(rows)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--results-dir', required=True)
+    table = contention(Path(parser.parse_args().results_dir))
+    with pd.option_context('display.width', 200, 'display.max_colwidth', 70):
+        print(table.round(3).to_string(index=False))
+
+
+if __name__ == '__main__':
+    main()

@@ -67,18 +67,23 @@ The full pipeline runs live capture → micro → cache probe → restore check 
 sweep → report:
 
 ```bash
-HOURS=9 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
+HOURS=9 nohup caffeinate -ims bash scripts/overnight.sh > /dev/null 2>&1 &
 ```
 
 - It is resumable: captured tasks, finished suites and logged macro runs are skipped.
 - Progress is logged to `runs/final/logs/pipeline.log`.
-- Run it on AC power with other apps closed.
+- Run it on AC power with other apps closed (including VMs such as Colima/Docker). `caffeinate -ims`
+  keeps the Mac awake but lets the display sleep, so the window server does not compete for the GPU.
+- `TRIALS=3` runs every macro experiment three times on identical inputs (trial 1 keeps the plain
+  label, so existing results count as trial 1). The report averages trials per repeat and shows
+  their spread as run-to-run noise. On the M4 this adds trials 2 and 3 to `runs/final` (~19 h):
+  `TRIALS=3 WORKLOADS=runs/final HOURS=10 nohup caffeinate -ims bash scripts/overnight.sh > /dev/null 2>&1 &`
 - After round 1 it re-runs FIFO P2 K2 J∞ and P2 K2 J2 on R0 three times (`NOISE_TRIALS`,
   `NOISE_REPEAT`) into `runs/final-noise`. Identical inputs, so the spread is run-to-run noise.
   `SCOPE=noise` runs only these trials (~1 h on the M4) and never captures:
 
 ```bash
-SCOPE=noise WORKLOADS=runs/final HOURS=2 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &
+SCOPE=noise WORKLOADS=runs/final HOURS=2 nohup caffeinate -ims bash scripts/overnight.sh > /dev/null 2>&1 &
 .venv/bin/python -m phase1.noise --results-dir runs/final-noise   # also run by the pipeline
 ```
 
@@ -109,11 +114,15 @@ directory and count it as extra repeats.
   - `--k` (request concurrency)
   - `--jobs-active` (task admission limit J; 0 = unlimited)
   - `--gap` (`recorded | zero | fixed:S | exp:MEAN | lognormal:MEDIAN:SIGMA`)
-  - `--arrival` (`batch | poisson:TASKS_PER_MIN`)
+  - `--arrival` (`batch | poisson:TASKS_PER_MIN | scaled:TASKS_PER_MIN`); `scaled` compresses the
+    repeat's `poisson:1` pattern, so a rate sweep changes only the rate (`poisson:R` draws a new pattern)
+  - `--trial N` re-runs a repeat on identical inputs under the label suffix `-T<N>`
   - `--num-jobs`, `--repeats`, `--repeat-start`, `--skip-done`
   - Each repeat index fixes the task mix, arrivals and delays, so configurations stay paired.
 - **`phase1.summarize`:** slowdown needs a `--k 1 --jobs-active 1` run in the same directory,
   which serves as the isolated-compute reference.
+- **`phase1.curves`:** per-run contention (mean active tasks, time above the slot count, hit rate),
+  used to calibrate the arrival rate on a new machine.
 
 ## Moving to AWS (CPU)
 
@@ -186,3 +195,72 @@ export PATH="$PWD/third_party/llama.cpp/build/bin:$PATH"
 - Calibrate arrival rates to the instance after the pilot: a k× slower machine at the same
   arrival rate runs a more heavily loaded experiment.
 - Compare configurations within one platform; never mix Mac and AWS absolute speeds.
+
+## AWS GPU (g4dn.xlarge): 3 trials of every experiment
+
+A T4 (16 GB) is the cheapest course-listed GPU that fits the model plus a 24K–36K KV budget
+(~6.3–7.7 GB); `--ctx-size` still enforces the edge-sized budget. At ~$0.53/hr the whole sweep runs
+in one session under a $20 daily limit. It is a new baseline: run Phase 2 on the same instance type.
+
+**1. Launch** (console, us-west-2): g4dn.xlarge, AMI "Deep Learning Base OSS Nvidia Driver GPU AMI
+(Ubuntu 24.04)" (AWS-provided, no Marketplace fees), 100 GB gp3 root volume, your key pair, a
+security group allowing SSH from your IP and all outbound traffic. If the launch fails on a vCPU
+limit, the account needs quota for "Running On-Demand G and VT instances" (≥ 4). Keep results on the
+root (EBS) volume: the instance-store NVMe disk is wiped whenever the instance stops.
+
+**2. Copy the repo and set up** (copy as in the CPU section, user `ubuntu`), then on the instance:
+
+```bash
+# No package updates mid-sweep: keeps CPU/disk quiet and the NVIDIA driver fixed between trials.
+sudo systemctl disable --now unattended-upgrades apt-daily.timer apt-daily-upgrade.timer
+sudo apt-get update && sudo apt-get install -y build-essential cmake git curl tmux
+curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH"
+cd ~/memory-aware-agent-edge-serving    # then follow Setup (sha256sum -c instead of shasum)
+git clone https://github.com/ggml-org/llama.cpp third_party/llama.cpp && git -C third_party/llama.cpp checkout 620d2225c
+cmake -S third_party/llama.cpp -B third_party/llama.cpp/build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DLLAMA_CURL=OFF
+cmake --build third_party/llama.cpp/build -j --target llama-server llama-bench
+nvidia-smi && .venv/bin/python -m pytest tests -q
+```
+
+**3. Pilot: calibrate the arrival rate** (~1 h, own directory). A GPU serves steps several times
+faster than the M4, so at 1 task/min tasks barely overlap and the eviction effect disappears. Tool
+delays stay in real seconds; only the arrival rate changes. `scaled:R` compresses each repeat's
+1/min pattern, so R0/R1/R2 keep their relative burstiness.
+
+```bash
+export PATH="$PWD/third_party/llama.cpp/build/bin:$PATH"
+mkdir -p runs/aws-gpu-pilot
+llama-bench -m models/Qwen3-4B-Q4_K_M.gguf -p 1024,4096 -n 64 -fa 1 -r 2 | tee runs/aws-gpu-pilot/llama-bench.txt
+.venv/bin/python -m phase1.server --parallel 2 --ctx-size 24576 --results-dir runs/aws-gpu-pilot
+for rate in 1 2 4; do
+  .venv/bin/python -m phase1.bench macro --workload runs/final/workload_eval.json --results-dir runs/aws-gpu-pilot \
+    --num-jobs 8 --repeat-start 0 --repeats 1 --k 2 --jobs-active 0 --gap lognormal:2:1 --arrival scaled:$rate --skip-done
+done
+.venv/bin/python -m phase1.curves --results-dir runs/aws-gpu-pilot
+```
+
+Pick the rate at which FIFO on R0 averages ~2.4 active tasks (the M4's R0: 2.4 active, 41% of the
+time above 2 slots, 69% full-history hits), then check R2 (FIFO and J2) at that rate: the M4's R2 had
+4.4 active, 87%, 7%, and J2 ~2× FIFO. Stop the server before the sweep.
+
+**4. Full sweep** in tmux (`tmux new -s sweep`), ~10–20 h for 114 macro runs:
+
+```bash
+TRIALS=3 ARRIVAL_KIND=scaled ARRIVAL_RATE=<rate> WORKLOADS=runs/final OUT=runs/aws-gpu DEV=runs/aws-gpu-dev \
+  HOURS=22 STOP_WHEN_DONE=1 STOP_DELAY_MIN=20 bash scripts/overnight.sh
+tail -f runs/aws-gpu/logs/pipeline.log       # GPU clocks/power/temperature: runs/aws-gpu/logs/machine.log
+```
+
+Resumable: after a stop or crash, the same command re-runs only what is missing. Each run records
+the GPU UUID, so a restart onto a different card shows in `raw/runs_meta.jsonl` and the report.
+
+**5. Copy results back** (from the laptop, during the run and at the end, before the power-off):
+
+```bash
+for d in aws-gpu aws-gpu-dev aws-gpu-pilot; do
+  rsync -az -e "ssh -i <key.pem>" ubuntu@<host>:memory-aware-agent-edge-serving/runs/$d/ runs/$d/
+done
+```
+
+**6. Clean up:** terminate the instance once the copies are verified, then check EC2 → Volumes,
+Snapshots and Elastic IPs for leftovers (a volume, even detached, bills until deleted).

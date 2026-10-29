@@ -47,3 +47,20 @@ def test_time_over_budget():
     demand = pd.DataFrame(dict(t_s=[0, 2, 6, 10], tokens=[100, 300, 150, 0], active=[1, 2, 1, 0]))
     assert time_over(demand, 200) == pytest.approx(0.4)
     assert time_over(demand, 1000) == 0
+
+
+def test_contention_per_run(tmp_path):
+    import json
+    from phase1.curves import contention
+    requests, jobs = frames()
+    raw = tmp_path / 'raw'
+    raw.mkdir()
+    timings = lambda r: dict(prompt_n=r['input_tokens'], cache_n=0, prompt_ms=1)
+    rows = [dict(r, reusable_tokens=0, new_tokens=r['input_tokens'], timings=timings(r)) for r in requests.to_dict('records')]
+    (raw / 'macro_requests.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows if r['label'] == 'a'))
+    (raw / 'macro_jobs.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in jobs.to_dict('records') if r['label'] == 'a'))
+    (raw / 'macro_runs.jsonl').write_text(json.dumps(dict(label='a', P=1, jobs_per_minute=1.0, makespan_s=12.0)) + '\n')
+    row = contention(tmp_path).iloc[0]
+    # Two tasks hold history from 4 s to 10 s of a 12 s run; one slot (P = 1).
+    assert row.mean_active == pytest.approx((4 * 1 + 6 * 2 + 2 * 1) / 12)
+    assert row.above_slots == pytest.approx(6 / 12)
