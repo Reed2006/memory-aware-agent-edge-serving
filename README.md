@@ -202,8 +202,9 @@ A T4 (16 GB) is the cheapest course-listed GPU that fits the model plus a 24K–
 (~6.3–7.7 GB); `--ctx-size` still enforces the edge-sized budget. At ~$0.53/hr the whole sweep runs
 in one session under a $20 daily limit. It is a new baseline: run Phase 2 on the same instance type.
 
-**1. Launch** (console, us-west-2): g4dn.xlarge, AMI "Deep Learning Base OSS Nvidia Driver GPU AMI
-(Ubuntu 24.04)" (AWS-provided, no Marketplace fees), 100 GB gp3 root volume, your key pair, a
+**1. Launch** (console, us-west-2): g4dn.xlarge, AMI "Deep Learning Base AMI with Single CUDA
+(Ubuntu 24.04)", 64-bit (x86) (AWS-provided, NVIDIA driver and CUDA included, no software fees;
+not the ARM64 or Ubuntu Pro variants), 100 GB gp3 root volume, your key pair, a
 security group allowing SSH from your IP and all outbound traffic. If the launch fails on a vCPU
 limit, the account needs quota for "Running On-Demand G and VT instances" (≥ 4). Keep results on the
 root (EBS) volume: the instance-store NVMe disk is wiped whenever the instance stops.
