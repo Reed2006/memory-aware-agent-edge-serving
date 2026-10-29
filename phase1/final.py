@@ -634,13 +634,21 @@ def machine_text(meta_rows):
         return 'arm64 macOS 15.3, Apple M4, 16 GB unified memory'
     p = recorded[-1]
     host = f"EC2 {p['instance_type']}" if p.get('instance_type') else f"{p['system']} {p['release']}"
-    return f"{host}, {p.get('cpu_model') or p['machine']}, {p['cpus']} logical CPUs, {p['memory_gib']} GiB memory"
+    gpus = p.get('gpus') or []
+    gpu = f", {gpus[0]['name']} ({gpus[0]['memory.total']}, driver {gpus[0]['driver_version']})" if gpus else ''
+    cards = {g['uuid'] for r in recorded for g in (r.get('gpus') or [])}
+    if len(cards) > 1:
+        gpu += f'; runs used {len(cards)} physical GPUs (instance restarts), see runs_meta.jsonl'
+    return f"{host}, {p.get('cpu_model') or p['machine']}, {p['cpus']} logical CPUs, {p['memory_gib']} GiB memory{gpu}"
 
 
 def backend_text(meta_rows):
     commands = meta_rows.get('server_command', pd.Series(dtype=object)).dropna()
     cpu = any('--no-kv-offload' in c for c in commands if isinstance(c, list))
-    return 'CPU only (no GPU offload)' if cpu else 'Metal'
+    platforms = [p for p in meta_rows.get('platform', pd.Series(dtype=object)).dropna() if isinstance(p, dict)]
+    if cpu:
+        return 'CPU only (no GPU offload)'
+    return 'CUDA' if any(p.get('gpus') for p in platforms) else 'Metal'
 
 
 def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup=None,

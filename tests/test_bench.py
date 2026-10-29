@@ -56,6 +56,23 @@ def test_macro_label_keeps_existing_names_and_marks_trials():
     assert macro_label(unified, 4, 2, 'zero', 'batch', 1, steps_limit=2) == 'macro-P4u-RAM3072-C24576-K4-J2-zero-batch-R1-S2'
 
 
+def test_nvidia_gpus_parses_nvidia_smi(monkeypatch):
+    import subprocess
+    from phase1 import bench
+
+    def fake_run(cmd, **kwargs):
+        assert cmd[0] == 'nvidia-smi'
+        return subprocess.CompletedProcess(cmd, 0, stdout='Tesla T4, GPU-1a2b, 550.54.15, 15360 MiB, 90.04.96.00.02\n')
+    monkeypatch.setattr(bench.subprocess, 'run', fake_run)
+    assert bench.nvidia_gpus() == [dict(name='Tesla T4', uuid='GPU-1a2b', driver_version='550.54.15',
+                                        **{'memory.total': '15360 MiB'}, vbios_version='90.04.96.00.02')]
+
+    def missing(cmd, **kwargs):
+        raise FileNotFoundError(cmd[0])
+    monkeypatch.setattr(bench.subprocess, 'run', missing)
+    assert bench.nvidia_gpus() is None
+
+
 def test_wasted_prefill_and_history_hit():
     requests = pd.DataFrame([
         dict(status='ok', step=0, new_tokens=100, reusable_tokens=0, timings=dict(prompt_n=100, cache_n=0, prompt_ms=1)),

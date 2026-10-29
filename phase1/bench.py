@@ -161,7 +161,21 @@ def platform_info() -> dict:
             timeout=0.5).read().decode()
     except OSError:
         pass  # not on EC2
+    info['gpus'] = nvidia_gpus()
     return info
+
+
+GPU_FIELDS = ['name', 'uuid', 'driver_version', 'memory.total', 'vbios_version']
+
+
+def nvidia_gpus() -> list[dict] | None:
+    """NVIDIA GPUs via nvidia-smi; the UUID shows whether a restarted instance got the same card."""
+    try:
+        out = subprocess.run(['nvidia-smi', f'--query-gpu={",".join(GPU_FIELDS)}', '--format=csv,noheader'],
+                             capture_output=True, text=True, check=True, timeout=10).stdout
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None  # no NVIDIA GPU (e.g. Apple Silicon, CPU instances)
+    return [dict(zip(GPU_FIELDS, (v.strip() for v in line.split(',')))) for line in out.splitlines() if line.strip()]
 
 
 def git_commit() -> str | None:
