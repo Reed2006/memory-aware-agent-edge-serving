@@ -4,8 +4,10 @@ CSE 291A (Fall 2026), Option 1. This project asks how a single memory-constraine
 machine should serve several multi-step LLM agents at once. Phase 1 measures fixed-concurrency
 FIFO baselines on a real agent benchmark and identifies the dominant bottleneck.
 
-- **Report:** [`runs/final/PHASE1_REPORT.md`](runs/final/PHASE1_REPORT.md), with figures in
-  `runs/final/figures/` (PNG and PDF).
+- **Report:** [`REPORT.md`](REPORT.md), on the T4 sweep in `runs/aws-gpu/` (3 trials of every
+  experiment). The generated appendix with every table is
+  [`runs/aws-gpu/PHASE1_REPORT.md`](runs/aws-gpu/PHASE1_REPORT.md), figures in `runs/aws-gpu/figures/`.
+  The initial M4 run is in `runs/final/`.
 - **Method:** [`docs/DESIGN.md`](docs/DESIGN.md).
 - **Course material:** `Requirements/`, kept as received.
 

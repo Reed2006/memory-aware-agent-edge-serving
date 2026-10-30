@@ -1,6 +1,6 @@
 # Phase 1 Report — Memory-Aware Agent Edge Serving (Option 1)
 
-_Generated 2026-10-28T16:14 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
+_Generated 2026-10-30T10:43 from `runs/final` by `phase1.final`. All numbers come from the raw logs in this directory._
 
 ## 1. Question and baseline
 
@@ -26,7 +26,7 @@ The baseline is a FIFO queue with fixed concurrency K in front of one llama-serv
 
 **Real application (live).** 20 eval tasks (test split) and 10 dev tasks (train split), sampled with seed 291 and kept regardless of outcome, were executed end-to-end: local Qwen3-4B agent, official Retail tools and DeepSeek user simulator. Eval tasks take 2–20 agent calls (median 11); the longest prompt per task is 5,030–9,677 tokens. ENV checks pass on 3/20 eval tasks: the 4B model is weak, and quality is reported, not filtered (F1).
 
-**Macro (benchmark-derived).** Each live trajectory is converted to an append-only replay that keeps the exact number of steps, per-step output tokens and input growth, and retains tokens actually generated during the replay. A run draws N tasks from the frozen eval set (balanced, seeded), with Poisson arrivals and controlled tool delays (default log-normal, median 2 s, σ=1, heavy-tailed). Every configuration sees identical arrivals, task order and delays for the same repeat index. The dev split is kept separate for selecting baselines.
+**Macro (benchmark-derived).** Each live trajectory is converted to an append-only replay that keeps the exact number of steps, per-step output tokens and input growth, and retains tokens actually generated during the replay. A run draws N tasks from the frozen eval set (balanced, seeded), with Poisson arrivals at 1 task/min, and controlled tool delays (default log-normal, median 2 s, σ=1, heavy-tailed). Every configuration sees identical arrivals, task order and delays for the same repeat index. The dev split is kept separate for selecting baselines.
 
 **Micro (controlled).** Exact token counts with prompt cache disabled; K requests submitted together. **Cache probe.** Measures continuation cost when an agent's slot is retained, idle, overwritten, erased, or saved to SSD and restored.
 
@@ -52,7 +52,7 @@ The baseline is a FIFO queue with fixed concurrency K in front of one llama-serv
 | 8,192 | 512 | 2 | 44.04 | 133.27 | 7.7 |
 
 
-Prefill runs at roughly 184 tokens/s, so re-processing an 8K history costs 43.6 s — longer than generating several hundred tokens.
+Prefill runs at roughly 184 tokens/s, so re-processing an 8K history costs 43.6 s, as long as generating about 1,161 output tokens at the measured 27 tokens/s.
 
 ### 4.2 Cache mechanisms (F3)
 
@@ -110,7 +110,7 @@ Tasks/min is mean ± SD across repeats; P50/P95, wasted prefill and hit rate are
 | P4u·24K K4 J∞ | 0.408 | 0.477 | 0.510 | 0.50× | 0.98× | 1.13× |
 
 
-Limiting active tasks (J = P) wins only when histories are long (R0, R2) and is neutral on short tasks (R1). Throughput also counts completed tasks only: P4·24K looks fast in R2 because its long tasks failed early.
+Highest throughput per repeat: R0 P2·24K K2 J2 (1.03×); R1 P2·24K K2 J∞ (1.00×; within 1%: P2·24K+RAM3G K2 J∞); R2 P2·24K K2 J2 (1.97×). A task limit equal to the slot count (P2 K2 J2) reaches 1.03× FIFO in R0, 0.97× FIFO in R1, 1.97× FIFO in R2. Throughput counts completed tasks only, so a configuration whose long tasks fail (P4) can look fast on the tasks that remain.
 
 
 Highest completed-task throughput on the eval workload: **P2·24K K2 J2**. (Phase 2 must re-select the best fixed baseline on the dev workload; this ranking is descriptive.)
@@ -155,7 +155,7 @@ llama-server preallocates the whole KV pool at start, so resident memory is set 
 | fixed:15 | 0.456 | 323 | 510 | 66.0% | 43.1% | 1.76 |
 
 
-Compared on the repeats every delay has. Only a long fixed idle time (15 s) clearly raises eviction and lowers throughput; the gap between no delay and log-normal delay is within repeat-to-repeat variation.
+Compared on the repeats every tool delay has (zero → lognormal:2:1 → fixed:15). Throughput goes from 0.603 to 0.654 to 0.456 tasks/min, P95 completion time goes from 289 s to 246 s to 510 s, the full-history hit rate goes from 67% to 83% to 43% and mean slowdown falls from 6.05 to 2.13 to 1.76.
 
 
 ### 4.6 Arrival rate (F11)
@@ -167,7 +167,7 @@ Compared on the repeats every delay has. Only a long fixed idle time (15 s) clea
 | poisson:2 | 0.801 | 185 | 416 | 47.1% | 55.1% | 3.77 |
 
 
-Compared on the repeats every rate has. The lowest rate (0.5/min) gives the best fairness and hit rate; between 1 and 2/min, throughput rises with offered load while P95 latency and eviction grow.
+Compared on the repeats every arrival rate has (poisson:0.5 → poisson:1 → poisson:2). Throughput rises from 0.467 to 0.654 to 0.801 tasks/min, P95 completion time rises from 188 s to 246 s to 416 s, the full-history hit rate falls from 92% to 83% to 55% and mean slowdown rises from 1.34 to 2.13 to 3.77.
 
 
 ### 4.7 Fairness (F8)
@@ -195,7 +195,7 @@ Compared on the repeats every rate has. The lowest rate (0.5/min) gives the best
 | 2 | 2 | 2 | 1 | 8/8 | 0.914 | 263 | 0.0% | 100.0% |
 
 
-On the dev tasks the best fixed baseline is again P2 K2 J2 (J = number of slots). K1 J2 gains nothing over K1 J∞; §4.9 explains why.
+On the dev tasks the highest-throughput fixed baseline is **P2 K2 J2** (0.914 tasks/min, 2.02× FIFO P2 K2 J∞). With K = 1, a task limit of 2 reaches 0.97× K1 J∞: with one request in flight, llama.cpp keeps using a single slot (§4.9).
 
 
 ### 4.9 How llama.cpp assigns slots (P = 2)
@@ -266,26 +266,38 @@ P2·24K K2, main condition: 454 continuations, 112 misses. A step that reuses it
 Demand is the KV the admitted tasks would need to keep their whole histories resident. Resident memory cannot show this (F7: the pool is preallocated), but the demand can: under FIFO it exceeds the budget whenever several tasks overlap, and every token above the budget belongs to a history that must be evicted and later re-prefilled. With partitioned slots eviction starts even earlier, as soon as more tasks than slots are active (F12). With J = 2 the demand never exceeds two histories, which always fit.
 
 
+### 4.14 Admission limit (F15)
+
+| J | tasks/min (mean of repeats) | P95 s | full-history hit | server busy | short-task slowdown |
+|---|---|---|---|---|---|
+| 1 (K1) | 0.677 | 280 | 100% | 45% | 13.44 |
+| 2 | 0.736 | 256 | 96% | 59% | 9.50 |
+| ∞ | 0.587 | 479 | 58% | 71% | 4.53 |
+
+P2 under the main condition, J = 1 with K = 1 and the rest with K = 2. As J grows, the full-history hit rate falls from 100% to 96% to 58%, while the share of each run with the server busy rises from 45% to 59% to 71%; the highest mean throughput is at J = 2.
+
+
 ## 5. Dominant bottleneck
 
-Across baselines the share of prefill spent recomputing history ranges from 0.0% (P2·24K K1 J1) to 78.0% (P2·24K K1 J∞); full-history hit rates range 25%–100%. Across configurations, wasted-prefill share and completed tasks/min correlate at r = -0.43. The paired comparison is clearer: on the same tasks, P2·24K K2 J2 reaches 1.97× the throughput of FIFO P2 K2 J∞ in the long-task repeat R2 but only 0.97× in the short-task repeat R1. Removing eviction pays off in proportion to how much history there is to lose. Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long Retail histories), fewer slots means agents evict one another's histories while their tools run. Raising the budget from 24K to 36K tokens at P4 cuts failures sharply, but P4 still does not beat P2 with a task limit.
+Across baselines the share of prefill tokens spent recomputing history ranges from 0.0% (P2·24K K1 J1) to 78.0% (P2·24K K1 J∞); full-history hit rates range 25%–100%. Across configurations, wasted-prefill share and completed tasks/min correlate at r = -0.43. Under FIFO, re-prefill takes 18% of model time (prefill + decode) and the server is busy 71% of each run; with J = 2 the server is busy 59% of the time. On the same tasks, a task limit equal to the slot count (P2 K2 J2) reaches 1.97× FIFO in the most contended repeat (R2, FIFO median completion 747 s) and 0.97× in the least contended (R1). Where tasks overlap, preventing eviction pays off, because a lost history is expensive to rebuild (6.0 s per 1,000 tokens, §4.12). Resident memory stays flat because the pool is preallocated, so the memory limit acts through the number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long Retail histories), fewer slots means agents evict one another's histories while their tools run. Raising the budget from 24K to 36K tokens at P4 raises completed tasks from 42% to 81%.
 
 
 ## 6. Phase 2 direction
 
-Phase 1 shows that, at a fixed KV budget, the cost that FIFO fails to control is **history eviction followed by re-prefill**, which grows with context length and with the number of agent tasks that share the slots. Four findings shape Phase 2:
+The measured findings that set the Phase 2 baselines and mechanism:
 
-1. **A fixed task limit J = P is already a strong baseline** (best on eval and dev, up to ~2× FIFO on long tasks). Phase 2 has to beat it, not FIFO.
-2. **That baseline is unfair to short tasks**: they wait for admission behind long ones (§4.7). A policy that admits by predicted KV footprint and remaining steps can keep J's cache hits while cutting short-task slowdown.
-3. **Slot placement is not agent-aware** (§4.9): with one request in flight llama.cpp reuses one slot and leaves the other empty. Slot affinity per task is required.
-4. **Simple fixed caching does not help**: llama.cpp's host prompt cache (`--cache-ram 3072`) is no better than none on the same tasks, while SSD save/restore of one slot costs < 1 s against 44 s to re-prefill 8K tokens (§4.2). Per-slot capacity, not slot count, decides whether long tasks fit (P4 fails at 6K per slot, mostly recovers at 9K).
+1. **The best fixed baseline on the dev workload is P2 K2 J2** (0.914 tasks/min, 2.02× FIFO). Phase 2 has to beat it, not only FIFO, on the eval workload.
+2. **A tight task limit is unfair to short tasks**: their mean slowdown is 9.50 under P2 K2 J2 against 4.53 under FIFO, because they wait for admission behind long tasks (§4.7).
+3. **Slot placement is not agent-aware** (§4.9): with one request in flight, 100% of requests go to the same slot. Slot affinity per task is a cheap first mechanism.
+4. **Retention by save/restore**: saving one slot's 8,192-token state takes 0.37 s and restoring it 0.35 s, against 44.11 s to re-prefill (§4.2), so checkpointing a slot is cheaper than rebuilding it.
+5. **llama.cpp's host prompt cache** (`--cache-ram 3072`) reaches 0.93× FIFO on average: a fixed cache does not address eviction.
 
-The Phase 2 mechanism is therefore a memory-aware admission and retention policy: (1) admit new agent tasks only while the KV budget can hold their growing context (estimated from observed growth), (2) give ready continuations priority with slot affinity, with aging so neither short nor long tasks starve, and (3) when a tool is slow, decide between keeping the slot, saving its state to SSD or evicting it. Required baselines: FIFO, the best fixed K/J selected on the dev workload (P2 K2 J2), and `--cache-ram` as the simple fixed cache policy; plus queue-only and cache-only ablations, policy overhead, and low-load / zero-delay cases where little benefit is expected.
+The Phase 2 mechanism is therefore an adaptive admission and retention policy: (1) admit agent tasks while the KV budget can hold their growing histories and while the server would otherwise idle during tool calls, (2) give ready continuations priority with per-task slot affinity, with aging so neither short nor long tasks starve, and (3) when a tool call is long, decide between keeping the slot, checkpointing it, or evicting it. Required baselines: FIFO, P2 K2 J2 (best fixed on dev), and `--cache-ram` as the simple fixed cache policy; plus queue-only and cache-only ablations, policy overhead, and low-load / zero-delay cases where little benefit is expected.
 
 ## 7. Limitations
 
 - Replay is append-only and benchmark-derived, not a byte-faithful trace; it does not re-execute customer-service semantics. Completion means "all recorded steps executed", not task success.
-- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3). Run-to-run noise on identical inputs is not measured here (`SCOPE=noise` in the pipeline measures it).
+- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3). Run-to-run noise on identical inputs is not measured here (`TRIALS` or `SCOPE=noise` in the pipeline measures it).
 - Latency of configurations with failures is over completed tasks only.
 - Each macro run is 8 tasks starting from erased slots (an empty KV cache), so it includes a ramp-up and a drain; there is no separate steady-state window, and tasks/min includes the drain tail. Server startup is reported in §4.10.
 - One laptop: thermal state and background processes are not fully controlled; RSS under-counts Metal allocations.
@@ -295,8 +307,8 @@ The Phase 2 mechanism is therefore a memory-aware admission and retention policy
 ## 8. Reproduce
 
 ```bash
-HOURS=9 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &   # resumable full pipeline
-.venv/bin/python -m phase1.final --results-dir runs/final                         # figures + this report
+HOURS=9 nohup caffeinate -ims bash scripts/overnight.sh > /dev/null 2>&1 &   # resumable full pipeline
+.venv/bin/python -m phase1.final --results-dir runs/final --main-arrival poisson:1   # figures + this report
 ```
 
 Setup, options and the AWS procedure are in the project `README.md`; definitions and validity rules in `docs/DESIGN.md`.
