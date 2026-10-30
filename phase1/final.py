@@ -1075,7 +1075,8 @@ def gpu_memory_text(meta_rows):
     """GPU memory in use from logs/machine.log (nvidia-smi), which server RSS does not include."""
     if backend_text(meta_rows) != 'CUDA' or not (ROOT / 'logs/machine.log').exists():
         return ''
-    used = [int(m) for m in re.findall(r', (\d+) MiB \|', (ROOT / 'logs/machine.log').read_text())]
+    # Samples between server restarts read ~0 MiB; keep those taken while a server held the model.
+    used = [u for u in map(int, re.findall(r', (\d+) MiB \|', (ROOT / 'logs/machine.log').read_text())) if u > 1024]
     if not used:
         return ''
     return (f' On a CUDA GPU the weights and the KV pool live in GPU memory, which server RSS does not include: '
