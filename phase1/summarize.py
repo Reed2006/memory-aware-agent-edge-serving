@@ -30,7 +30,7 @@ def request_metrics(requests: pd.DataFrame) -> pd.DataFrame:
     requests = requests.copy()
     if 'timings' not in requests:  # every request failed before the server answered
         requests['timings'] = None
-    for key in ['prompt_n', 'cache_n', 'prompt_ms']:
+    for key in ['prompt_n', 'cache_n', 'prompt_ms', 'predicted_ms']:
         requests[key] = requests['timings'].map(lambda d: d.get(key) if isinstance(d, dict) else np.nan)
     ok = requests.status == 'ok'
     requests['wasted_prefill'] = np.where(ok, (requests.prompt_n - requests.new_tokens).clip(lower=0), np.nan)

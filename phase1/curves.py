@@ -58,6 +58,21 @@ def time_over(demand: pd.DataFrame, budget: int) -> float:
     return float(widths[over].sum() / total) if total > 0 else np.nan
 
 
+def busy_fraction(requests: pd.DataFrame, jobs: pd.DataFrame) -> float:
+    """Share of one run (first arrival to last completion) with at least one request in the server."""
+    spans = sorted(zip(requests.dispatch_s, requests.done_s))
+    if not spans or jobs.empty:
+        return np.nan
+    busy, start, end = 0.0, *spans[0]
+    for a, b in spans[1:]:
+        if a > end:
+            busy, start, end = busy + end - start, a, b
+        else:
+            end = max(end, b)
+    busy += end - start
+    total = jobs.done_s.max() - jobs.arrival_s.min()
+    return busy / total if total > 0 else np.nan
+
 def contention(root: Path) -> pd.DataFrame:
     """One row per macro run: time-weighted mean active tasks, share of time with more active
     tasks than slots, full-history hit rate and tasks/min."""

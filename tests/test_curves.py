@@ -64,3 +64,10 @@ def test_contention_per_run(tmp_path):
     # Two tasks hold history from 4 s to 10 s of a 12 s run; one slot (P = 1).
     assert row.mean_active == pytest.approx((4 * 1 + 6 * 2 + 2 * 1) / 12)
     assert row.above_slots == pytest.approx(6 / 12)
+
+
+def test_busy_fraction_merges_overlapping_requests():
+    from phase1.curves import busy_fraction
+    jobs = pd.DataFrame(dict(arrival_s=[0.0, 1.0], done_s=[8.0, 10.0]))
+    requests = pd.DataFrame(dict(dispatch_s=[0.0, 1.0, 6.0], done_s=[2.0, 3.0, 7.0]))   # 0-3 busy, 6-7 busy
+    assert busy_fraction(requests, jobs) == pytest.approx(4 / 10)

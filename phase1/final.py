@@ -6,6 +6,7 @@ produces a coherent report; absent experiments are listed as not run.
 
 import argparse
 import json
+import re
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from phase1.curves import active_at_dispatch, kv_demand, time_over
+from phase1.curves import active_at_dispatch, busy_fraction, contention, kv_demand, time_over
 from phase1.noise import spread, trial_rows
 from phase1.startup import startup_rows, write_csv
 from phase1.summarize import summarize
@@ -33,7 +34,11 @@ NOTES: list[str] = []
 # ---------------------------------------------------------------- helpers
 
 def read_jsonl(name):
-    path = ROOT / 'raw' / name
+    return read_jsonl_at(ROOT, name)
+
+
+def read_jsonl_at(root, name):
+    path = root / 'raw' / name
     if not path.exists():
         return pd.DataFrame()
     return pd.DataFrame([json.loads(s) for s in path.read_text().splitlines() if s])
@@ -299,9 +304,9 @@ def fig_main(macro):
     axes[2].set(title='Failed tasks (context overflow)', ylabel='% of submitted', ylim=(0, 100))
     fig.suptitle('F4  End-to-end FIFO baselines by server configuration and KV budget', x=.01, ha='left', weight='bold')
     fig.tight_layout(rect=[0, .06, 1, .93])
-    save(fig, 'f04_main', f'Eval workload (test split), Poisson {MAIN_ARRIVAL.split(":")[1]} task/min, tool delay {MAIN_GAP}. '
-                          'P = slots, u = unified KV, K = request concurrency, J = active-task limit. '
-                          'Each repeat is a different seeded mix of 8 tasks (R1 short, R2 long).')
+    save(fig, 'f04_main', f'Eval workload (test split), arrivals {MAIN_ARRIVAL}, tool delay {MAIN_GAP}. '
+                          'P = slots, u = unified KV, K = request concurrency, J = active-task limit. Each repeat is a '
+                          'different seeded mix of 8 tasks with its own arrival pattern (R1 fewest steps, R2 burstiest arrivals).')
 
 
 @section
@@ -587,10 +592,98 @@ def fig_kv_demand(macro):
     return tab
 
 
+ADMISSION = [('P2·24K K1 J1', '1 (K1)'), ('P2·24K K2 J2', '2'), ('P2·24K K2 J3', '3'), ('P2·24K K2 J4', '4'), ('P2·24K K2 J∞', '∞')]
+
+
+@section
+def fig_admission(macro):
+    """Admission curve: P2 under the main condition as the active-task limit J grows."""
+    present = [(c, l) for c, l in ADMISSION if c in set(macro['trial_runs'].config)]
+    if len(present) < 3:
+        return None
+    trial_runs = main_condition(macro['trial_runs'])
+    req, jobs = macro['requests'], macro['jobs']
+    trial_runs = trial_runs[trial_runs.config.isin([c for c, _ in present])].copy()
+    trial_runs['busy'] = [busy_fraction(req[req.label == l], jobs[jobs.label == l]) for l in trial_runs.label]
+    per = trial_runs.groupby(['config', 'repeat']).agg(tpm=('jobs_per_min', 'mean'), tpm_sd=('jobs_per_min', 'std'),
+                                                       p95=('p95', 'mean'), hit=('hit_rate', 'mean'), busy=('busy', 'mean'))
+    done = main_condition(jobs[(jobs.status == 'ok') & jobs.slowdown.notna()])
+    short = done[done.expected_output_tokens <= done.expected_output_tokens.median()].groupby('config').slowdown.mean()
+    x = np.arange(len(present))
+    fig, axes = plt.subplots(1, 5, figsize=(21, 4.4))
+    panels = [('tpm', 'Completed tasks / min', 1), ('p95', 'P95 completion (s)', 1), ('hit', 'Full-history hit rate (%)', 100),
+              ('busy', 'Server busy (% of run)', 100)]
+    for ax, (metric, title, scale) in zip(axes, panels):
+        for i, r in enumerate(sorted(per.index.get_level_values('repeat').unique())):
+            vals = per.xs(r, level='repeat').reindex([c for c, _ in present])
+            err = vals.tpm_sd if metric == 'tpm' and vals.tpm_sd.notna().any() else None
+            ax.errorbar(x, vals[metric] * scale, yerr=err, marker='o', capsize=3, color=REPEAT_COLORS[i % 3], mec='#333', label=f'R{r}')
+        ax.set(title=title, xticks=x, xlabel='active-task limit J')
+        ax.set_xticklabels([l for _, l in present])
+    axes[0].legend(frameon=False, fontsize=8, title='repeat')
+    axes[4].bar(x, short.reindex([c for c, _ in present]), color=COLORS[0])
+    axes[4].set(title='Short-task slowdown (mean)', xticks=x, xlabel='active-task limit J')
+    axes[4].set_xticklabels([l for _, l in present])
+    fig.suptitle('F15  Admission curve: P2 under the main condition as the active-task limit grows', x=.01, ha='left', weight='bold')
+    fig.tight_layout(rect=[0, .05, 1, .93])
+    save(fig, 'f15_admission', 'J = 1 runs with K = 1; the other points with K = 2. Error bars: SD over trials of the same repeat. '
+                               'Server busy = share of the run with at least one request in the server.')
+    table_rows = per.groupby('config').mean().reindex([c for c, _ in present])
+    table_rows['short'] = short.reindex(table_rows.index)
+    table_rows['label'] = [l for _, l in present]
+    return table_rows
+
+
+@section
+def fig_calibration():
+    """Arrival-rate calibration from <results>-pilot: FIFO contention against the offered rate."""
+    pilot = ROOT.parent / (ROOT.name + '-pilot')
+    if not (pilot / 'raw/macro_runs.jsonl').exists():
+        return None
+    cont = contention(pilot)
+    runs = read_jsonl_at(pilot, 'macro_runs.jsonl')[['label', 'arrival', 'repeat', 'j']]
+    cont = cont.merge(runs, on='label')
+    cont['rate'] = cont.arrival.str.split(':').str[1].astype(float)
+    scan = cont[(cont.repeat == 0) & (cont.j.fillna(0) == 0)].sort_values('rate')
+    ref = None
+    initial = ROOT.parent / 'final'
+    if (initial / 'raw/macro_runs.jsonl').exists():
+        c0 = contention(initial)
+        ref = c0[c0.label == 'macro-P2-C24576-K2-Jall-lognormal:2:1-poisson:1-R0']
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.4))
+    for ax, (metric, title, scale) in zip(axes, [('mean_active', 'Mean active tasks', 1),
+                                                 ('above_slots', 'Time with more active tasks than slots (%)', 100),
+                                                 ('hit_rate', 'Full-history hit rate (%)', 100)]):
+        ax.plot(scan.rate, scan[metric] * scale, marker='o', color=COLORS[0], mec='#333', label='FIFO P2 K2, R0')
+        if ref is not None and not ref.empty:
+            ax.axhline(ref[metric].iloc[0] * scale, color=COLORS[1], ls='--', lw=1.2, label='initial run (M4), R0 at 1/min')
+        main_rate = float(MAIN_ARRIVAL.split(':')[1]) if ':' in MAIN_ARRIVAL else np.nan
+        if np.isfinite(main_rate):
+            ax.axvline(main_rate, color='#777', ls=':', lw=1)
+        ax.set(title=title, xlabel='offered load (tasks/min, scaled arrivals)')
+    axes[0].legend(frameon=False, fontsize=8)
+    fig.suptitle('F16  Arrival-rate calibration on this machine (pilot runs, not part of the sweep)', x=.01, ha='left', weight='bold')
+    fig.tight_layout(rect=[0, .05, 1, .93])
+    save(fig, 'f16_calibration', f'Dotted line: the chosen main rate ({MAIN_ARRIVAL}). Pilot runs are in {pilot}.')
+    return cont.sort_values(['repeat', 'j', 'rate']), ref
+
+
 # ---------------------------------------------------------------- report
 
+def live_dir(split):
+    """The live capture behind this directory's workload: its own raw/live_<split>, or, for a sweep
+    that reused frozen workloads (WORKLOADS=...), the capture the workload file names."""
+    own = ROOT / f'raw/live_{split}'
+    workload = ROOT / ('workload_eval.json' if split == 'test' else 'workload_dev.json')
+    if not own.exists() and workload.exists():
+        source = json.loads(workload.read_text()).get('source_dir')
+        if source and Path(source).exists():
+            return Path(source)
+    return own
+
+
 def live_records(split):
-    path = ROOT / f'raw/live_{split}'
+    path = live_dir(split)
     return [json.loads(p.read_text()) for p in sorted(path.glob('task_*.json'))] if path.exists() else []
 
 
@@ -652,10 +745,10 @@ def backend_text(meta_rows):
 
 
 def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup=None,
-           eviction=None, context=None, demand=None):
+           eviction=None, context=None, demand=None, admission=None, calibration=None):
     lines = []
     add = lines.append
-    noise = None
+    noise = dev_summary = None
     meta_rows = meta()
     power = sorted({(m or '').split('\n')[0] for m in meta_rows.get('power', pd.Series(dtype=str)).dropna()})
     commits = sorted(set(meta_rows.get('git_commit', pd.Series(dtype=str)).dropna()))
@@ -693,12 +786,25 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
             'sampled with seed 291 and kept regardless of outcome, were executed end-to-end: local Qwen3-4B agent, '
             f'official Retail tools and DeepSeek user simulator. Eval tasks take {min(steps)}–{max(steps)} agent calls '
             f'(median {np.median(steps):.0f}); the longest prompt per task is {min(maxlen):,}–{max(maxlen):,} tokens. '
-            f'ENV checks pass on {passes}/{len(test)} eval tasks: the 4B model is weak, and quality is reported, not filtered (F1).\n')
+            f'ENV checks pass on {passes}/{len(test)} eval tasks: the 4B model is weak, and quality is reported, not filtered (F1).'
+            + ('' if live_dir('test').is_relative_to(ROOT) else
+               f' The capture is reused from `{live_dir("test").parent.parent}` as a frozen workload, so no replay here calls the user simulator.')
+            + '\n')
+    kind, _, rate = MAIN_ARRIVAL.partition(':')
+    arrivals = (f'each repeat\'s 1 task/min Poisson pattern compressed to {rate} tasks/min (`{MAIN_ARRIVAL}`)' if kind == 'scaled'
+                else f'Poisson arrivals at {rate} task{"" if rate == "1" else "s"}/min' if kind == 'poisson'
+                else f'arrivals `{MAIN_ARRIVAL}`')
+    pilot = ROOT.parent / (ROOT.name + '-pilot')
+    if kind == 'scaled' and pilot.exists():
+        arrivals += f', a rate chosen in a calibration pilot (`{pilot}`) for comparable contention'
+    trials = int(macro['runs'].trials.max()) if macro is not None and len(macro['runs']) else 1
     add('**Macro (benchmark-derived).** Each live trajectory is converted to an append-only replay that keeps the exact '
         'number of steps, per-step output tokens and input growth, and retains tokens actually generated during the '
-        'replay. A run draws N tasks from the frozen eval set (balanced, seeded), with Poisson arrivals and controlled '
+        f'replay. A run draws N tasks from the frozen eval set (balanced, seeded), with {arrivals}, and controlled '
         'tool delays (default log-normal, median 2 s, σ=1, heavy-tailed). Every configuration sees identical arrivals, '
-        'task order and delays for the same repeat index. The dev split is kept separate for selecting baselines.\n')
+        'task order and delays for the same repeat index'
+        + (f', and every experiment was run {trials} times on these identical inputs (trials)' if trials > 1 else '')
+        + '. The dev split is kept separate for selecting baselines.\n')
     add('**Micro (controlled).** Exact token counts with prompt cache disabled; K requests submitted together. '
         '**Cache probe.** Measures continuation cost when an agent\'s slot is retained, idle, overwritten, erased, or saved to SSD and restored.\n')
     add('**Metrics.** Completed tasks/min, P50/P95/P99 task completion time (arrival → last step, admission and queue '
@@ -716,8 +822,11 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
         one = g[(g.k == 1) & (g.output == g.output.min())]
         if len(one) > 1:
             rate = (one.length.max() - one.length.min()) / (one.prefill_s.max() - one.prefill_s.min())
+            longest = g[(g.k == 1) & (g.output == g.output.max()) & (g.length == g.length.min())].iloc[0]
+            decode = longest.output / (longest.roundtrip_s - longest.prefill_s)   # alone, short context
             add(f'\nPrefill runs at roughly {rate:,.0f} tokens/s, so re-processing an 8K history costs '
-                f'{fmt(one.prefill_s.max(), 1)} s — longer than generating several hundred tokens.\n')
+                f'{fmt(one.prefill_s.max(), 1)} s, as long as generating about {one.prefill_s.max() * decode:,.0f} output tokens '
+                f'at the measured {decode:,.0f} tokens/s.\n')
     if cache is not None:
         data, rows = cache
         add('### 4.2 Cache mechanisms (F3)\n')
@@ -764,8 +873,7 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
                 add(table(['config'] + [f'R{c} tasks/min' for c in cols] + [f'R{c} vs FIFO' for c in cols],
                           [[c] + [fmt(pivot.loc[c, r], 3) for r in cols] + [fmt(ratio.loc[c, r], 2, '×') for r in cols]
                            for c in pivot.index]))
-                add('\nLimiting active tasks (J = P) wins only when histories are long (R0, R2) and is neutral on short tasks (R1). '
-                    'Throughput also counts completed tasks only: P4·24K looks fast in R2 because its long tasks failed early.\n')
+                add('\n' + paired_text(ratio))
             best = main.groupby('config').jobs_per_min.mean().idxmax()
             add(f'\nHighest completed-task throughput on the eval workload: **{best}**. (Phase 2 must re-select the best fixed '
                 'baseline on the dev workload; this ranking is descriptive.)\n')
@@ -785,21 +893,19 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
                       [[s, fmt(r.kv_gib, 2), fmt(r.rss_gib, 2), fmt(r.avail_gib, 2)] for s, r in memory.iterrows()]))
             add('\nllama-server preallocates the whole KV pool at start, so resident memory is set by the budget, not by '
                 'load; "too much work" therefore shows up as slot contention (evicted histories) or as hard context '
-                'overflows, not as growing RSS.\n')
+                'overflows, not as growing RSS.' + gpu_memory_text(meta()) + '\n')
         if gap_tab is not None:
             add('### 4.5 Idle time between steps (F10)\n')
             add(table(['tool delay', 'tasks/min', 'P50 s', 'P95 s', 'wasted prefill', 'history hit', 'slowdown'],
                       [[i, fmt(r.jobs_per_min, 3), fmt(r.p50, 0), fmt(r.p95, 0), fmt(r.wasted_frac * 100, 1, '%'), fmt(r.hit_rate * 100, 1, '%'), fmt(r.slowdown, 2)]
                        for i, r in gap_tab.iterrows()]))
-            add('\nCompared on the repeats every delay has. Only a long fixed idle time (15 s) clearly raises eviction and '
-                'lowers throughput; the gap between no delay and log-normal delay is within repeat-to-repeat variation.\n')
+            add('\n' + sweep_text(gap_tab, 'tool delay'))
         if arrival_tab is not None:
             add('\n### 4.6 Arrival rate (F11)\n')
             add(table(['arrival', 'tasks/min', 'P50 s', 'P95 s', 'wasted prefill', 'history hit', 'slowdown'],
                       [[i, fmt(r.jobs_per_min, 3), fmt(r.p50, 0), fmt(r.p95, 0), fmt(r.wasted_frac * 100, 1, '%'), fmt(r.hit_rate * 100, 1, '%'), fmt(r.slowdown, 2)]
                        for i, r in arrival_tab.iterrows()]))
-            add('\nCompared on the repeats every rate has. The lowest rate (0.5/min) gives the best fairness and hit rate; '
-                'between 1 and 2/min, throughput rises with offered load while P95 latency and eviction grow.\n')
+            add('\n' + sweep_text(arrival_tab, 'arrival rate'))
         if fairness is not None:
             add('\n### 4.7 Fairness (F8)\n')
             add(table(['config', 'short-task slowdown', 'long-task slowdown'],
@@ -809,13 +915,13 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
             summarize(dev)
             d = pd.read_csv(dev / 'summary/sweep_summary.csv')
             d['j'] = d['j'].fillna(0).astype(int)
+            dev_summary = d
             add('\n### 4.8 Dev workload (for Phase 2 baseline selection)\n')
             add(table(['P', 'K', 'J', 'runs', 'completed', 'tasks/min', 'P95 s', 'wasted prefill', 'history hit'],
                       [[int(r.P), int(r.k), int(r.j) or '∞', int(r.runs), f'{int(r.completed)}/{int(r.submitted)}',
                         fmt(r.jobs_per_min_mean, 3), fmt(r.p95_s, 0), fmt(r.wasted_prefill_fraction * 100, 1, '%'),
                         fmt(r.full_history_hit_rate * 100, 1, '%')] for r in d.itertuples()]))
-            add('\nOn the dev tasks the best fixed baseline is again P2 K2 J2 (J = number of slots). '
-                'K1 J2 gains nothing over K1 J∞; §4.9 explains why.\n')
+            add('\n' + dev_text(d))
         slots = section(slot_use)(macro)
         if slots is not None:
             tab, prefix = slots
@@ -853,47 +959,35 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
             add('\n' + context_text(context))
         if demand is not None and not demand.empty:
             add('\n' + demand_text(demand))
+        if admission is not None:
+            add('\n' + admission_text(admission))
+        if calibration is not None:
+            add('\n' + calibration_text(*calibration))
         noise = section(noise_text)(main, macro['trial_runs'])
         if noise:
             add('\n' + noise)
         add('\n## 5. Dominant bottleneck\n')
-        add(bottleneck_text(macro, micro, cache))
+        add(bottleneck_text(macro, micro, cache, context))
     add('\n## 6. Phase 2 direction\n')
-    add('Phase 1 shows that, at a fixed KV budget, the cost that FIFO fails to control is **history eviction followed by '
-        're-prefill**, which grows with context length and with the number of agent tasks that share the slots. Four '
-        'findings shape Phase 2:\n\n'
-        '1. **A fixed task limit J = P is already a strong baseline** (best on eval and dev, up to ~2× FIFO on long tasks). '
-        'Phase 2 has to beat it, not FIFO.\n'
-        '2. **That baseline is unfair to short tasks**: they wait for admission behind long ones (§4.7). A policy that '
-        'admits by predicted KV footprint and remaining steps can keep J\'s cache hits while cutting short-task slowdown.\n'
-        '3. **Slot placement is not agent-aware** (§4.9): with one request in flight llama.cpp reuses one slot and leaves '
-        'the other empty. Slot affinity per task is required.\n'
-        '4. **Simple fixed caching does not help**: llama.cpp\'s host prompt cache (`--cache-ram 3072`) is no better than '
-        'none on the same tasks, while SSD save/restore of one slot costs < 1 s against 44 s to re-prefill 8K tokens '
-        '(§4.2). Per-slot capacity, not slot count, decides whether long tasks fit (P4 fails at 6K per slot, mostly '
-        'recovers at 9K).\n\n'
-        'The Phase 2 mechanism is therefore a memory-aware admission and retention policy: (1) admit new agent tasks only '
-        'while the KV budget can hold their growing context (estimated from observed growth), (2) give ready continuations '
-        'priority with slot affinity, with aging so neither short nor long tasks starve, and (3) when a tool is slow, decide '
-        'between keeping the slot, saving its state to SSD or evicting it. Required baselines: FIFO, the best fixed K/J '
-        'selected on the dev workload (P2 K2 J2), and `--cache-ram` as the simple fixed cache policy; plus queue-only and '
-        'cache-only ablations, policy overhead, and low-load / zero-delay cases where little benefit is expected.\n')
+    if macro is not None:
+        add(phase2_text(macro, cache, fairness, dev_summary))
     add('## 7. Limitations\n')
     add('- Replay is append-only and benchmark-derived, not a byte-faithful trace; it does not re-execute customer-service semantics. '
         'Completion means "all recorded steps executed", not task success.\n'
         '- 8 tasks per run and 3 repeats (2 for P4·36K and for the tool-delay / arrival sweeps); P95/P99 are descriptive. '
         'Error bars are SD across repeats, which mostly reflects the different task mix of each repeat (§4.3). '
-        + ('Run-to-run noise on identical inputs is in §4.14.\n' if noise
+        + ('Run-to-run noise on identical inputs is in §4.16.\n' if noise
            else 'Run-to-run noise on identical inputs is not measured here (`TRIALS` or `SCOPE=noise` in the pipeline measures it).\n') +
         '- Latency of configurations with failures is over completed tasks only.\n'
         '- Each macro run is 8 tasks starting from erased slots (an empty KV cache), so it includes a ramp-up and a drain; '
         'there is no separate steady-state window, and tasks/min includes the drain tail. Server startup is reported in §4.10.\n'
-        '- One laptop: thermal state and background processes are not fully controlled; RSS under-counts Metal allocations.\n'
+        + environment_text(meta_rows) +
+        (f'- The main arrival `{MAIN_ARRIVAL}` was calibrated on this machine; absolute numbers are not comparable '
+         'with runs on other machines.\n' if MAIN_ARRIVAL.startswith('scaled') else '') +
         '- The 600 s per-request HTTP deadline is a client limit, not a production SLO.\n'
         '- The user simulator is DeepSeek, not TritonAI; it only shapes the captured trajectories.\n')
     add('## 8. Reproduce\n')
-    add('```bash\nHOURS=9 nohup caffeinate -dims bash scripts/overnight.sh > /dev/null 2>&1 &   # resumable full pipeline\n'
-        '.venv/bin/python -m phase1.final --results-dir runs/final                         # figures + this report\n```\n')
+    add(reproduce_text())
     add('Setup, options and the AWS procedure are in the project `README.md`; definitions and validity rules in `docs/DESIGN.md`.\n')
     add('Raw logs: `raw/`; tables: `summary/`; figures: `figures/` (PNG + PDF); pipeline log: `logs/pipeline.log`.\n')
     if NOTES:
@@ -902,6 +996,91 @@ def report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairn
 
 
 REF_CONFIG = 'P2·24K K2 J∞'
+
+
+def admission_text(tab):
+    text = '### 4.14 Admission limit (F15)\n\n'
+    text += table(['J', 'tasks/min (mean of repeats)', 'P95 s', 'full-history hit', 'server busy', 'short-task slowdown'],
+                  [[r.label, fmt(r.tpm, 3), fmt(r.p95, 0), fmt(r.hit * 100, 0, '%'), fmt(r.busy * 100, 0, '%'), fmt(r.short, 2)]
+                   for r in tab.itertuples()])
+    best = tab.tpm.idxmax()
+    text += (f'\nP2 under the main condition, J = 1 with K = 1 and the rest with K = 2. As J grows, the full-history hit rate '
+             f'{change(tab.hit, pct=True)}, while the share of each run with the server busy {change(tab.busy, pct=True)}; '
+             f'the highest mean throughput is at J = {tab.loc[best, "label"]}.\n')
+    return text
+
+
+def calibration_text(cont, ref):
+    text = '### 4.15 Arrival-rate calibration (F16)\n\n'
+    text += table(['run', 'tasks/min offered', 'mean active tasks', 'time above slots', 'full-history hit', 'tasks/min completed'],
+                  [[f'R{int(r.repeat)} J{int(r.j) or "∞"}', fmt(r.rate, 2), fmt(r.mean_active, 2), fmt(r.above_slots * 100, 0, '%'),
+                    fmt(r.hit_rate * 100, 0, '%'), fmt(r.tasks_per_min, 3)] for r in cont.itertuples()])
+    if ref is not None and not ref.empty:
+        r = ref.iloc[0]
+        text += (f'\nTarget from the initial run (M4, FIFO P2 K2 on R0 at 1 task/min): {fmt(r.mean_active, 2)} active tasks, '
+                 f'{fmt(r.above_slots * 100, 0, "%")} of the time above the slot count, {fmt(r.hit_rate * 100, 0, "%")} hits. ')
+    return text + (f'The main rate `{MAIN_ARRIVAL}` was chosen from these pilot runs, which are not part of the sweep.\n')
+
+
+def change(values, unit='', digits=3, pct=False):
+    """'rises from a to b to c' / 'falls ...' / 'goes from ...' for a short ordered series."""
+    v = [x for x in values if pd.notna(x)]
+    word = 'rises' if all(b > a for a, b in zip(v, v[1:])) else 'falls' if all(b < a for a, b in zip(v, v[1:])) else 'goes'
+    shown = [fmt(x * 100, 0, '%') if pct else fmt(x, digits, unit) for x in v]
+    return f'{word} from ' + ' to '.join(shown)
+
+
+def paired_text(ratio):
+    """Best configuration per repeat and where the slot-count task limit lands, from the paired ratios."""
+    parts = []
+    for r in ratio.columns:
+        col = ratio[r].dropna()
+        best = col.idxmax()
+        near = [c for c in col.index if c != best and col[c] >= col[best] * 0.99]
+        parts.append(f'R{r} {best} ({fmt(col[best], 2, "×")}' + (f'; within 1%: {", ".join(near)}' if near else '') + ')')
+    text = 'Highest throughput per repeat: ' + '; '.join(parts) + '. '
+    if 'P2·24K K2 J2' in ratio.index:
+        text += ('A task limit equal to the slot count (P2 K2 J2) reaches '
+                 + ', '.join(f'{fmt(ratio.loc["P2·24K K2 J2", r], 2, "×")} FIFO in R{r}' for r in ratio.columns) + '. ')
+    return text + ('Throughput counts completed tasks only, so a configuration whose long tasks fail (P4) can look fast '
+                   'on the tasks that remain.\n')
+
+
+def sweep_text(tab, what):
+    """Direction of throughput, tail latency, hit rate and slowdown along a one-parameter sweep."""
+    if len(tab) < 2:
+        return ''
+    labels = ' → '.join(str(i) for i in tab.index)
+    return (f'Compared on the repeats every {what} has ({labels}). Throughput {change(tab.jobs_per_min)} tasks/min, '
+            f'P95 completion time {change(tab.p95, " s", 0)}, the full-history hit rate {change(tab.hit_rate, pct=True)} '
+            f'and mean slowdown {change(tab.slowdown, digits=2)}.\n')
+
+
+def dev_text(d):
+    """Best fixed baseline on the dev workload, relative to FIFO P2 K2 J∞."""
+    d = d[d.P == 2]
+    best = d.loc[d.jobs_per_min_mean.idxmax()]
+    fifo = d[(d.k == 2) & (d.j == 0)].jobs_per_min_mean
+    text = (f'On the dev tasks the highest-throughput fixed baseline is **P{int(best.P)} K{int(best.k)} J{int(best.j) or "∞"}** '
+            f'({fmt(best.jobs_per_min_mean, 3)} tasks/min'
+            + (f', {fmt(best.jobs_per_min_mean / fifo.iloc[0], 2, "×")} FIFO P2 K2 J∞' if len(fifo) else '') + '). ')
+    k1 = d[d.k == 1].set_index('j').jobs_per_min_mean
+    if 0 in k1.index and 2 in k1.index:
+        text += (f'With K = 1, a task limit of 2 reaches {fmt(k1[2] / k1[0], 2, "×")} K1 J∞: with one request in flight, '
+                 'llama.cpp keeps using a single slot (§4.9).')
+    return text + '\n'
+
+
+def gpu_memory_text(meta_rows):
+    """GPU memory in use from logs/machine.log (nvidia-smi), which server RSS does not include."""
+    if backend_text(meta_rows) != 'CUDA' or not (ROOT / 'logs/machine.log').exists():
+        return ''
+    used = [int(m) for m in re.findall(r', (\d+) MiB \|', (ROOT / 'logs/machine.log').read_text())]
+    if not used:
+        return ''
+    return (f' On a CUDA GPU the weights and the KV pool live in GPU memory, which server RSS does not include: '
+            f'nvidia-smi reported {min(used):,}–{max(used):,} MiB in use over the sweep (`logs/machine.log`), '
+            'set by the server configuration rather than by load.')
 
 
 def eviction_text(rate, count):
@@ -970,7 +1149,7 @@ def trials_text(trial_runs):
                 paired.append(f'R{r} {fmt(v.min(), 2)}–{fmt(v.max(), 2)}×{side}')
         rows.append([c, int(cell.loc[c]['size'].max()), fmt(cv.mean() * 100, 1, '%'), fmt(cv.max() * 100, 1, '%'),
                      '; '.join(paired) or '–'])
-    text = '### 4.14 Run-to-run noise (every experiment repeated as trials)\n\n'
+    text = '### 4.16 Run-to-run noise (every experiment repeated as trials)\n\n'
     text += table(['config', 'trials per repeat', 'tasks/min CV, mean over repeats', 'max CV', 'vs FIFO per trial, range per repeat'], rows)
     worst = cell.cv.max()
     text += ('\nTrials replay a repeat with identical tasks, arrivals and tool delays, so their spread is run-to-run noise; '
@@ -991,7 +1170,7 @@ def noise_text(main, trial_runs=None):
     rows = trial_rows(root)
     summary = spread(rows)
     summary['config'] = summary.apply(config_name, axis=1)
-    text = '### 4.14 Run-to-run noise (same inputs, repeated)\n\n'
+    text = '### 4.16 Run-to-run noise (same inputs, repeated)\n\n'
     text += table(['config', 'repeat', 'trials', 'completed', 'tasks/min mean ± SD', 'CV', 'min–max', 'P50 s (CV)',
                    'history hit', 'vs FIFO, per trial'],
                   [[r.config, f'R{int(r.repeat)}', r.trials, f'{int(rows[rows.j == r.j].completed.sum())}/{int(rows[rows.j == r.j].tasks.sum())}',
@@ -1062,33 +1241,137 @@ def slot_use(macro):
     return pd.DataFrame(rows), prefix
 
 
-def bottleneck_text(macro, micro, cache):
+def run_costs(macro, configs):
+    """Per run of the given configurations (main condition): GPU busy share and the share of model time
+    (prefill + decode) spent re-prefilling history the task had already computed."""
+    req, jobs = macro['requests'], macro['jobs']
+    rows = []
+    for r in main_condition(macro['trial_runs']).itertuples():
+        if r.config not in configs:
+            continue
+        q, j = req[(req.label == r.label) & (req.status == 'ok')], jobs[jobs.label == r.label]
+        model_s = (q.prompt_ms.sum() + q.predicted_ms.sum()) / 1000
+        reprefill_s = (q.prompt_ms * q.wasted_prefill / q.prompt_n.where(q.prompt_n > 0)).sum() / 1000
+        rows.append(dict(config=r.config, repeat=r.repeat, busy=busy_fraction(req[req.label == r.label], j),
+                         reprefill_share=reprefill_s / model_s if model_s else np.nan))
+    return pd.DataFrame(rows)
+
+
+def bottleneck_text(macro, micro, cache, context=None):
     main = main_condition(macro['runs'])
     if main.empty:
         return 'Main-condition runs are missing; see the tables above.\n'
     g = main.groupby('config')[['wasted_frac', 'hit_rate', 'jobs_per_min', 'p95']].mean()
     worst, best = g.wasted_frac.idxmax(), g.wasted_frac.idxmin()
     corr = g[['wasted_frac', 'jobs_per_min']].corr().iloc[0, 1] if len(g) > 2 else np.nan
-    text = (f'Across baselines the share of prefill spent recomputing history ranges from {fmt(g.wasted_frac.min() * 100, 1, "%")} '
+    text = (f'Across baselines the share of prefill tokens spent recomputing history ranges from {fmt(g.wasted_frac.min() * 100, 1, "%")} '
             f'({best}) to {fmt(g.wasted_frac.max() * 100, 1, "%")} ({worst}); full-history hit rates range '
             f'{fmt(g.hit_rate.min() * 100, 0, "%")}–{fmt(g.hit_rate.max() * 100, 0, "%")}. ')
     if np.isfinite(corr):
         text += f'Across configurations, wasted-prefill share and completed tasks/min correlate at r = {corr:.2f}. '
+    costs = section(run_costs)(macro, [REF_CONFIG, 'P2·24K K2 J2'])
+    if costs is not None and not costs.empty:
+        c = costs.groupby('config')[['busy', 'reprefill_share']].mean()
+        if REF_CONFIG in c.index:
+            text += (f'Under FIFO, re-prefill takes {fmt(c.loc[REF_CONFIG, "reprefill_share"] * 100, 0, "%")} of model time '
+                     f'(prefill + decode) and the server is busy {fmt(c.loc[REF_CONFIG, "busy"] * 100, 0, "%")} of each run')
+            if 'P2·24K K2 J2' in c.index:
+                text += f'; with J = 2 the server is busy {fmt(c.loc["P2·24K K2 J2", "busy"] * 100, 0, "%")} of the time'
+            text += '. '
     pivot, ratio = paired_throughput(main)
-    limited = [c for c in ['P2·24K K2 J2', 'P2·24K K1 J1'] if ratio is not None and c in ratio.index]
-    if limited:
-        c = limited[0]
+    if ratio is not None and 'P2·24K K2 J2' in ratio.index:
         mix = repeat_mix(main)
-        longest, shortest = max(mix, key=mix.get), min(mix, key=mix.get)
-        text += (f'The paired comparison is clearer: on the same tasks, {c} reaches {fmt(ratio.loc[c, longest], 2, "×")} the '
-                 f'throughput of FIFO P2 K2 J∞ in the long-task repeat R{longest} but only {fmt(ratio.loc[c, shortest], 2, "×")} '
-                 f'in the short-task repeat R{shortest}. Removing eviction pays off in proportion to how much history there is '
-                 'to lose. ')
-    text += ('Resident memory stays flat because the pool is preallocated, so the edge-memory limit acts through the '
+        most, least = max(mix, key=mix.get), min(mix, key=mix.get)
+        gain = ratio.loc['P2·24K K2 J2', most]
+        text += (f'On the same tasks, a task limit equal to the slot count (P2 K2 J2) reaches {fmt(gain, 2, "×")} FIFO in the '
+                 f'most contended repeat (R{most}, FIFO median completion {fmt(mix[most], 0)} s) and '
+                 f'{fmt(ratio.loc["P2·24K K2 J2", least], 2, "×")} in the least contended (R{least}). ')
+        slope = context.get('slope') if context else np.nan
+        cost = f' ({fmt(slope * 1000, 1)} s per 1,000 tokens, §4.12)' if np.isfinite(slope) else ''
+        if gain > 1.1:
+            text += (f'Where tasks overlap, preventing eviction pays off, because a lost history is expensive to rebuild{cost}. ')
+        elif gain < 0.95:
+            text += (f'Even where tasks overlap most, the limit costs throughput: a lost history is cheap to rebuild{cost}, '
+                     'while the admitted tasks spend much of their time in tool calls and leave the server idle. ')
+    text += ('Resident memory stays flat because the pool is preallocated, so the memory limit acts through the '
              'number and size of slots: more slots per budget means smaller per-slot contexts (overflow failures for long '
-             'Retail histories), fewer slots means agents evict one another\'s histories while their tools run. Raising the '
-             'budget from 24K to 36K tokens at P4 cuts failures sharply, but P4 still does not beat P2 with a task limit.\n')
-    return text
+             'Retail histories), fewer slots means agents evict one another\'s histories while their tools run. ')
+    p4 = main[main.P == 4].groupby('config')[['completed', 'submitted']].sum()
+    if {'P4·24K K4 J∞', 'P4·36K K4 J∞'} <= set(p4.index):
+        done = p4.completed / p4.submitted
+        text += (f'Raising the budget from 24K to 36K tokens at P4 raises completed tasks from '
+                 f'{fmt(done["P4·24K K4 J∞"] * 100, 0, "%")} to {fmt(done["P4·36K K4 J∞"] * 100, 0, "%")}.')
+    return text + '\n'
+
+
+def phase2_text(macro, cache, fairness, dev):
+    """Findings that set the Phase 2 baselines and mechanism, computed from this directory."""
+    items = []
+    if dev is not None and not dev.empty:
+        d = dev[dev.P == 2]
+        best = d.loc[d.jobs_per_min_mean.idxmax()]
+        name = f'P2 K{int(best.k)} J{int(best.j) or "∞"}'
+        fifo = d[(d.k == 2) & (d.j == 0)].jobs_per_min_mean
+        rel = f', {fmt(best.jobs_per_min_mean / fifo.iloc[0], 2, "×")} FIFO' if len(fifo) else ''
+        items.append(f'**The best fixed baseline on the dev workload is {name}** ({fmt(best.jobs_per_min_mean, 3)} tasks/min{rel}). '
+                     'Phase 2 has to beat it, not only FIFO, on the eval workload.')
+    else:
+        name = 'the best fixed K/J'
+    if fairness is not None and {'P2·24K K2 J2', REF_CONFIG} <= set(fairness.index):
+        items.append(f'**A tight task limit is unfair to short tasks**: their mean slowdown is '
+                     f'{fmt(fairness.loc["P2·24K K2 J2", "short"], 2)} under P2 K2 J2 against '
+                     f'{fmt(fairness.loc[REF_CONFIG, "short"], 2)} under FIFO, because they wait for admission behind long tasks (§4.7).')
+    slots = section(slot_use)(macro)
+    if slots is not None:
+        tab = slots[0].set_index(['k', 'j'])
+        if (1, 0) in tab.index:
+            items.append(f'**Slot placement is not agent-aware** (§4.9): with one request in flight, '
+                         f'{fmt(tab.loc[(1, 0), "busiest_slot"] * 100, 0, "%")} of requests go to the same slot. '
+                         'Slot affinity per task is a cheap first mechanism.')
+    if cache is not None and cache[1] is not None:
+        r = cache[1].iloc[-1]
+        length = cache[1].index[-1]
+        verdict = ('so checkpointing a slot is cheaper than rebuilding it' if r.save_s + r.restore_s < r.rebuild_s else
+                   'so writing a checkpoint costs more than rebuilding, and a checkpoint helps only if it is written '
+                   'while the task waits on a tool, off the critical path')
+        items.append(f'**Retention by save/restore**: saving one slot\'s {length:,}-token state takes {fmt(r.save_s, 2)} s and '
+                     f'restoring it {fmt(r.restore_s, 2)} s, against {fmt(r.rebuild_s, 2)} s to re-prefill (§4.2), {verdict}.')
+    main = main_condition(macro['runs'])
+    _, ratio = paired_throughput(main)
+    if ratio is not None and 'P2·24K+RAM3G K2 J∞' in ratio.index:
+        items.append(f'**llama.cpp\'s host prompt cache** (`--cache-ram 3072`) reaches '
+                     f'{fmt(ratio.loc["P2·24K+RAM3G K2 J∞"].mean(), 2, "×")} FIFO on average: a fixed cache does not address eviction.')
+    text = 'The measured findings that set the Phase 2 baselines and mechanism:\n\n' + ''.join(f'{i}. {t}\n' for i, t in enumerate(items, 1))
+    return text + ('\nThe Phase 2 mechanism is therefore an adaptive admission and retention policy: (1) admit agent tasks '
+                   'while the KV budget can hold their growing histories and while the server would otherwise idle during '
+                   'tool calls, (2) give ready continuations priority with per-task slot affinity, with aging so neither '
+                   'short nor long tasks starve, and (3) when a tool call is long, decide between keeping the slot, '
+                   f'checkpointing it, or evicting it. Required baselines: FIFO, {name} (best fixed on dev), and '
+                   '`--cache-ram` as the simple fixed cache policy; plus queue-only and cache-only ablations, policy '
+                   'overhead, and low-load / zero-delay cases where little benefit is expected.\n')
+
+
+def environment_text(meta_rows):
+    """Limitations bullet about the machine the runs came from."""
+    if backend_text(meta_rows) == 'CUDA':
+        log = ROOT / 'logs/machine.log'
+        clocks = [int(m) for m in re.findall(r'GPU-[^,]+, (\d+) MHz', log.read_text())] if log.exists() else []
+        span = f'; its SM clock ranged {min(clocks):,}–{max(clocks):,} MHz (`logs/machine.log`)' if clocks else ''
+        return ('- One dedicated EC2 GPU instance with nothing else running; the GPU ran at its board power cap under load'
+                f'{span}. Server RSS excludes GPU memory (§4.4).\n')
+    return '- One laptop: thermal state and background processes are not fully controlled; RSS under-counts Metal allocations.\n'
+
+
+def reproduce_text():
+    log = ROOT / 'logs/pipeline.log'
+    starts = [s for s in log.read_text().splitlines() if '=== pipeline start' in s] if log.exists() else []
+    settings = starts[-1].split('commit ', 1)[-1] if starts else 'see logs/pipeline.log'
+    if ROOT.name == 'final':
+        run = 'HOURS=9 nohup caffeinate -ims bash scripts/overnight.sh > /dev/null 2>&1 &   # resumable full pipeline'
+    else:
+        run = f'# pipeline settings for this directory (logs/pipeline.log): commit {settings}'
+    return (f'```bash\n{run}\n.venv/bin/python -m phase1.final --results-dir {ROOT} --main-arrival {MAIN_ARRIVAL}'
+            '   # figures + this report\n```\n')
 
 
 def main():
@@ -1108,7 +1391,7 @@ def main():
     micro = fig_micro()
     cache = fig_cache()
     macro = section(load_macro)()
-    parts = memory = gap_tab = arrival_tab = fairness = eviction = context = demand = None
+    parts = memory = gap_tab = arrival_tab = fairness = eviction = context = demand = admission = None
     if macro is not None:
         fig_main(macro)
         parts = fig_breakdown(macro)
@@ -1128,9 +1411,11 @@ def main():
         eviction = fig_eviction(macro)
         context = fig_context_cost(macro)
         demand = fig_kv_demand(macro)
+        admission = fig_admission(macro)
     startup = load_startup()
+    calibration = fig_calibration()
     report(live, micro, cache, macro, parts, memory, gap_tab, arrival_tab, fairness, startup,
-           eviction, context, demand)
+           eviction, context, demand, admission, calibration)
     print('Wrote', ROOT / 'PHASE1_REPORT.md', 'and figures in', FIG, '| notes:', NOTES or 'none')
 
 
