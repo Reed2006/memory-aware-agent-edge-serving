@@ -1,0 +1,11 @@
+0.00.048.095 W Setting 'enable_thinking' via --chat-template-kwargs is deprecated. Use --reasoning on / --reasoning off instead.
+0.00.048.310 I srv  llama_server: initializing ...
+0.00.048.330 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.048.857 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.051.038 I srv    load_model: loading model '/home/ubuntu/memory-aware-agent-edge-serving/models/Qwen3-4B-Q4_K_M.gguf'
+0.00.369.054 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.01.225.062 I cmn          init: llama threadpool init, n_threads = 4
+0.01.357.233 I srv    load_model: initializing, n_slots = 2, n_ctx_slot = 12288, kv_unified = 'false'
+0.01.366.990 I srv  llama_server: model loaded
+0.01.367.001 I srv  llama_server: listening on http://127.0.0.1:18080
+0.05.395.904 I srv    operator(): operator(): cleaning up before exit...

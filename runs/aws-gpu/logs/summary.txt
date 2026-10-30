@@ -1,0 +1,73 @@
+                                    0              1              2           3              4              5              6           7              8              9              10             11  \
+P                                    1              2              2           2              2              2              2           2              2              2              2              2   
+ctx_size                         24576          24576          24576       24576          24576          24576          24576       24576          24576          24576          24576          24576   
+kv_unified                       False          False          False       False          False          False          False       False          False          False          False          False   
+cache_ram_mib                        0              0              0           0              0              0              0           0              0              0              0           3072   
+k                                    1              1              1           2              2              2              2           2              2              2              2              2   
+j                                    0              0              1           0              0              0              0           0              2              3              4              0   
+gap_mode                 lognormal:2:1  lognormal:2:1  lognormal:2:1    fixed:15  lognormal:2:1  lognormal:2:1  lognormal:2:1        zero  lognormal:2:1  lognormal:2:1  lognormal:2:1  lognormal:2:1   
+arrival                     scaled:3.5     scaled:3.5     scaled:3.5  scaled:3.5    scaled:1.75     scaled:3.5       scaled:7  scaled:3.5     scaled:3.5     scaled:3.5     scaled:3.5     scaled:3.5   
+steps_limit                          0              0              0           0              0              0              0           0              0              0              0              0   
+runs                                 9              9              9           6              6              9              6           6              9              9              9              9   
+repeats                              3              3              3           2              2              3              2           2              3              3              3              3   
+trials                               3              3              3           3              3              3              3           3              3              3              3              3   
+submitted                           72             72             72          48             48             72             48          48             72             72             72             72   
+completed                           72             72             72          48             48             72             48          48             72             72             72             72   
+failed                               0              0              0           0              0              0              0           0              0              0              0              0   
+failure_types                                                                                                                                                                                           
+jobs_per_min_mean                1.915          1.914          1.229       1.098          1.144          2.133          2.461       2.444          1.875          2.096          2.086          2.135   
+jobs_per_min_sd                  0.547          0.546          0.086       0.311          0.438          0.662          0.659       0.924          0.455          0.627           0.62          0.663   
+jobs_per_min_trial_sd            0.002          0.001            0.0       0.001            0.0          0.001          0.002         0.0          0.001          0.004          0.011          0.005   
+p50_s                           66.575         66.701        133.654     175.298         47.456         57.645         60.567      16.279         70.954         63.687         66.175         57.643   
+p95_s                          164.818        164.766        275.735     300.872        130.672        151.894        140.441      46.795          172.9        143.428        146.225        151.804   
+p99_s                          191.232        191.173        336.706     318.938        136.253        162.014        147.797      50.227        185.942        148.924        153.639        161.849   
+admission_wait_mean_s              0.0            0.0        108.489         0.0            0.0            0.0            0.0         0.0         28.716         10.413          5.343            0.0   
+fifo_wait_mean_s                 2.373          2.408            0.0       0.183          0.019          0.721          0.489       0.029            0.0          0.179          0.404          0.728   
+fifo_wait_p95_s                 11.696         12.212            0.0       1.522            0.0          4.962          2.875         0.0            0.0          1.509          3.209          4.945   
+prefill_tokens                829895.0       829893.0       167169.0    479134.0       161547.0       602878.0       391666.0    138952.0       297410.0       484278.0       553516.0       609242.0   
+wasted_prefill_tokens         662756.0       662754.0            0.0    356674.0        53766.0       421060.0       283883.0      1800.0       115599.0       302453.0       371695.0       427423.0   
+wasted_prefill_fraction          0.799          0.799            0.0       0.744          0.333          0.698          0.725       0.013          0.389          0.625          0.672          0.702   
+full_history_hit_rate            0.238          0.238            1.0       0.183          0.925          0.545          0.452       0.979          0.907          0.675          0.598          0.543   
+slowdown_mean                    1.751          1.758         11.742       1.062           1.09          1.437          1.387       1.333          4.881          1.724          1.558          1.446   
+slowdown_p95                     2.564          2.563         57.018       1.139          1.483          2.203          1.988       2.616         28.627          4.392          2.275          2.202   
+slowdown_max                     3.978          3.977         95.076       1.143          1.598          3.152          2.093       3.088         37.788          5.342          6.547          3.185   
+jain_1_over_slowdown             0.904          0.903          0.566       0.998          0.989          0.944          0.974       0.942          0.778            0.9          0.935          0.944   
+slowdown_long_mean               1.633          1.645          2.248       1.065          1.033          1.385          1.331       1.194           1.25          1.288          1.313          1.387   
+slowdown_short_mean              1.851          1.854         19.775       1.059          1.135          1.482          1.431       1.442          7.953          2.093          1.766          1.495   
+
+                                                 12               13                          14  
+P                                                 4                4                           4  
+ctx_size                                      24576            24576                       36864  
+kv_unified                                    False             True                       False  
+cache_ram_mib                                     0                0                           0  
+k                                                 4                4                           4  
+j                                                 0                0                           0  
+gap_mode                              lognormal:2:1    lognormal:2:1               lognormal:2:1  
+arrival                                  scaled:3.5       scaled:3.5                  scaled:3.5  
+steps_limit                                       0                0                           0  
+runs                                              9                9                           6  
+repeats                                           3                3                           2  
+trials                                            3                3                           3  
+submitted                                        72               72                          48  
+completed                                        30               48                          39  
+failed                                           42               24                           9  
+failure_types            HTTPStatusError;ValueError  HTTPStatusError  HTTPStatusError;ValueError  
+jobs_per_min_mean                             1.246            1.511                       1.507  
+jobs_per_min_sd                               0.459             0.43                       0.429  
+jobs_per_min_trial_sd                         0.001            0.015                       0.009  
+p50_s                                        12.531             29.1                      30.967  
+p95_s                                        23.832          141.275                     138.725  
+p99_s                                        23.846           146.53                     138.751  
+admission_wait_mean_s                           0.0              0.0                         0.0  
+fifo_wait_mean_s                              0.019             0.08                         0.0  
+fifo_wait_p95_s                                 0.0              0.0                         0.0  
+prefill_tokens                             191555.0         325184.0                    199662.0  
+wasted_prefill_tokens                       62641.0         140760.0                     95586.0  
+wasted_prefill_fraction                       0.327            0.433                       0.479  
+full_history_hit_rate                         0.815            0.817                         0.9  
+slowdown_mean                                 1.515            1.711                       1.176  
+slowdown_p95                                  4.387            4.653                       1.478  
+slowdown_max                                  4.395            6.056                       1.515  
+jain_1_over_slowdown                          0.924            0.919                       0.985  
+slowdown_long_mean                              NaN            1.173                       1.075  
+slowdown_short_mean                           1.515            2.033                       1.239  
