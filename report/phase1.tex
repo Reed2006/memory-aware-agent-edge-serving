@@ -55,7 +55,7 @@ The live capture is the only place where a real agent runs. We had the agent exe
 
 \section{Workload}
 
-We sampled 20 eval tasks and 10 dev tasks with seed 291 and kept every task, even the ones that failed. Eval tasks take roughly 2 to 20 model calls, with a median of 11, and the longest prompt in a task is between 5,030 and 9,677 tokens. The environment check passed on only 3 of the 20 eval tasks. The 4B model is weak at this Retail task, but we did not drop these failures. We used the dev tasks only to pick a baseline.
+We sampled 20 eval tasks and 10 dev tasks with seed 291 and kept every task, even the ones that failed. Eval tasks take roughly 2 to 20 model calls, with a median of 11, and the longest prompt in a task is between 5,030 and 9,677 tokens. The environment check passed on only 3 of the 20 eval tasks. The 4B model is weak at this Retail task, but we did not drop these failures. The failed tasks do not loop: the passing tasks (12 to 16 calls) lie inside the range of the failing ones, and six failures end within 4 calls (Table A7), so a stronger agent would produce longer histories. We used the dev tasks only to pick a baseline.
 
 We ran each Retail task once and saved its shape: how many model calls there were, how long each answer was, and how much the prompt grew after each tool result. The 20 eval recordings and the 10 dev recordings are frozen as the workload.
 
@@ -71,13 +71,13 @@ We also ran two checks that are not the Retail replay. The micro benchmark used 
 
 \textbf{If the slot is still there, that cost almost goes away.} After an 8K prompt, a continuation's prefill took about 0.17 to 0.20 seconds and reused 99.9\% of the input when the slot was retained, idle, or loaded from disk. Overwrite and erase dropped to 0\% reuse and took about 44 seconds. The 8K state took up 1,156 MiB; saving it took only 0.37 seconds and restoring it 0.35 seconds, and these steps combined with prefill took about 0.90 seconds. After save, overwrite, and restore, 64 greedy tokens matched the run that was never interrupted. Saving a slot to disk is cheap on this machine, but recomputing the prefix is not (Table A3).
 
-\textbf{The process does not get bigger when we add load.} llama-server allocates the KV pool up front, so a 24K budget is 3.38 GiB of KV on paper; the process peaks around 3.6 GiB RSS, with about 1.9 GiB still free. Four slots at the same budget use about the same RSS. The memory limit shows up as agents overwriting each other's slots, or as a prompt that does not fit in its slot. It does not show up as RSS climbing with load. With two slots, a returning task finds its whole history 100\% of the time when it is alone, 83\% with two active tasks, 11\% with three, and never with four (Table A4, Figure A3).
+\textbf{The process does not get bigger when we add load.} llama-server allocates the KV pool up front, so a 24K budget is 3.38 GiB of KV on paper; the process peaks around 3.6 GiB RSS, with about 1.9 GiB still free. Four slots at the same budget use about the same RSS. System available memory, which includes the Metal allocations that RSS misses, stayed between 1.9 and 3.5 GiB without swap-out. The memory limit shows up as agents overwriting each other's slots, or as a prompt that does not fit in its slot. It does not show up as RSS climbing with load. With two slots, a returning task finds its whole history 100\% of the time when it is alone, 83\% with two active tasks, 11\% with three, and never with four (Table A4, Figure A3).
 
 \begin{table*}[t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{5pt}
-\caption{M4 retail replays under the default load (24K-token budget, log-normal tool delay with median 2 s, one Poisson arrival per minute). P50 and P95 are averages of the per-run percentiles, and latency only includes tasks that finished. $\pm$ is the standard deviation across repeats, which mostly reflects which tasks each repeat drew. The full table is Table A1.}
+\caption{M4 retail replays under the default load (24K-token budget, log-normal tool delay with median 2 s, one Poisson arrival per minute). P50 and P95 average the per-run percentiles over finished tasks; $\pm$ is the SD across repeats, mostly from the task mix. Full table: Table A1.}
 \label{tab:main}
 \begin{tabular}{@{}lrrrrrr@{}}
 \toprule
@@ -97,7 +97,7 @@ Setup & Finished & Tasks/min & P50 & P95 & History prefilled again & Full histor
 
 \textbf{The variation across repeats is mostly which tasks were drawn.} Each repeat is a different draw of 8 tasks, and every configuration sees the same 8. One repeat is a long batch: with no cap, the median task took 747 seconds. Another repeat is a short batch, with a median of 50 seconds. On the three repeats the cap is 1.03 times, 0.97 times, and 1.97 times the uncapped FIFO, so it is a big win on one batch and about a tie on the other two. The big win is the batch where tasks overlap the most, 4.4 tasks active under FIFO against 2.4 and 0.7, not only the batch with longer prompts (Table A6).
 
-\textbf{On the long batch, the cap wins by keeping histories in their slots.} With no cap, a task on that batch waits about 292 seconds in the FIFO line, spends about 255 seconds in the model round trip, and finishes after 580 seconds. Most of that model time recomputes old tokens after another agent took the slot, and because every step is longer, the line behind it grows too. At $K = 2$ the round trip also includes time spent sharing the server. With the cap, the line wait is 0, a task waits about 120 seconds to be let in, the round trip falls to about 91 seconds, and the task finishes after 244 seconds. The tool wait stays about 33 seconds either way. On the M4 dev tasks, the 10 we held out, $P = 2$, $K = 2$, $J = 2$ was the best of the four runs (one run each), about 0.91 tasks per minute, and none of the prefill was old tokens being computed again. Uncapped FIFO on those tasks was about 0.45 tasks per minute, and 77\% of the prefill was old tokens. On the M4, Phase 2 therefore has to beat this setup, not only uncapped FIFO.
+\textbf{On the long batch, the cap wins by keeping histories in their slots.} With no cap, a task on that batch waits about 292 seconds in the FIFO line, spends about 255 seconds in the model round trip, and finishes after 580 seconds. Most of that model time recomputes old tokens after another agent took the slot, and longer steps lengthen the line. At $K = 2$ the round trip also includes time spent sharing the server. With the cap, the line wait is 0, a task waits about 120 seconds to be let in, the round trip falls to about 91 seconds, and the task finishes after 244 seconds. The tool wait stays about 33 seconds either way. On the M4 dev tasks, the 10 we held out, $P = 2$, $K = 2$, $J = 2$ was the best of the four runs (one run each), about 0.91 tasks per minute, and none of the prefill was old tokens being computed again. Uncapped FIFO on those tasks was about 0.45 tasks per minute, and 77\% of the prefill was old tokens. On the M4, Phase 2 therefore has to beat this setup, not only uncapped FIFO.
 
 \textbf{The same cap does not win on a faster GPU.} We also ran the full matrix on an AWS T4, three trials of every run, with arrivals raised to 3.5 tasks per minute so that tasks overlap about as much as on the M4. Histories are lost the same way: with two slots, a returning task finds its whole history 98\% of the time alone, 37\% with three active tasks, and 15\% with four. But on the T4 an 8K re-prefill takes 5.1 seconds instead of 44, and a model step (1.9 seconds) is shorter than a tool wait (2.9 seconds), so the cap mostly leaves the GPU idle while admitted agents wait on tools. The $J = 2$ cap finishes tasks at 0.91, 1.00, and 0.79 times FIFO on the three repeats, and the best fixed cap on the T4 dev tasks is $J = 4$ (1.04 times FIFO). Whether a cap helps depends on how expensive a lost history is compared with a tool wait (Tables A2 and A6, Figure A4).
 
@@ -105,24 +105,23 @@ Setup & Finished & Tasks/min & P50 & P95 & History prefilled again & Full histor
 \begin{equation}
 \mathrm{slowdown} = \frac{T_{\mathrm{completion}}}{T_{K=1,J=1} + T_{\mathrm{tool}}}
 \end{equation}
-\(T_{\mathrm{completion}}\) is how long the task took in that run, \(T_{K=1,J=1}\) is its model time when it runs alone, and \(T_{\mathrm{tool}}\) is its own tool wait. Under the cap, short tasks, split at the median output length, slow down by 9.5 times and long tasks by 1.6 times, because the short ones are waiting to be admitted. With no cap the slowdowns are closer, about 4.5 times for short tasks and 3.4 times for long tasks, and the whole run is slower. The T4 shows the same pattern: short-task slowdown rises from 1.5 under FIFO to 8.5 under $J = 2$ (Figure A6).
+\(T_{\mathrm{completion}}\) is how long the task took in that run, \(T_{K=1,J=1}\) is its model time when it runs alone, and \(T_{\mathrm{tool}}\) is its own tool wait. Under the cap, short tasks, split at the median output length, slow down by 9.5 times and long tasks by 1.6 times, because the short ones are waiting to be admitted. With no cap the slowdowns are closer, about 4.5 times for short tasks and 3.4 times for long tasks, and the whole run is slower. The T4 shows the same pattern: short-task slowdown rises from 1.5 under FIFO to 8.5 under $J = 2$. A looser cap, $J = 3$, keeps short-task slowdown at 2.2 while finishing tasks at 0.98 times FIFO (Figure A6).
 
 \textbf{llama.cpp does not keep a slot for each agent.} Every Retail task starts with the same 4,891-token system prompt and tool schema. llama.cpp picks the idle slot whose cached prompt shares the longest prefix, and when $K = 1$ every slot is idle, so it keeps choosing the same slot and the second slot stays empty. Two active tasks then overwrite each other in that one slot. When a history is lost, the shared prefix usually survives and only the task-specific tail is recomputed. A slot is therefore not reserved for an agent unless we pass \texttt{id\_slot} ourselves.
 
 \textbf{The host prompt cache did not help.} \texttt{-{}-cache-ram 3072} is the 3 GiB row in Table~\ref{tab:main}. On the same eval mixes it was no better than no cache (0.81, 1.00, and 0.99 times FIFO on the three repeats), and on the T4 it matched FIFO exactly.
 
-\textbf{Tool delay and arrival rate change how often agents overwrite each other's old tokens.} With 2 slots and $K = 2$, we first changed only the wait after each model step: no wait, the usual median 2-second wait, and a fixed 15-second wait. Each repeat is a different draw of 8 tasks, so we compared only the repeats where all three waits ran. No wait and the 2-second wait are close, 0.60 and 0.65 tasks per minute respectively, inside the long-batch versus short-batch gap. The 15-second wait is worse: 66\% of the prefill is old tokens computed again, and finished tasks fall to 0.46 per minute. We then changed only how often a new task shows up. At one task every 2 minutes, a task takes 1.3 times as long as running alone, and 92\% of next steps still have the whole previous prompt. At 2 tasks per minute, finished tasks increase to 0.80 per minute, P95 increases to 416 seconds, and only 55\% of next steps still have the whole previous prompt. The one-per-minute number here is 0.65, not 0.59 as in Table~\ref{tab:main}, because only the repeats that all three rates ran are included (Figure A7).
+\textbf{Tool delay and arrival rate change how often agents overwrite each other's old tokens.} With 2 slots and $K = 2$, we first changed only the wait after each model step: no wait, the usual median 2-second wait, and a fixed 15-second wait. Each repeat is a different draw of 8 tasks, so we compared only the repeats where all three waits ran. No wait and the 2-second wait are close, 0.60 and 0.65 tasks per minute respectively, inside the long-batch versus short-batch gap. The 15-second wait is worse: 66\% of the prefill is old tokens computed again, and finished tasks fall to 0.46 per minute. We then changed only how often a new task shows up. At one task every 2 minutes, a task takes 1.3 times as long as running alone, and 92\% of next steps still have the whole previous prompt. At 2 tasks per minute, finished tasks increase to 0.80 per minute, P95 increases to 416 seconds, and only 55\% of next steps still have the whole previous prompt. The one-per-minute value is 0.65 here, not 0.59, because only shared repeats count (Figure A7).
 
 \section{What we plan for Phase 2}
 
-For Phase 2 we want one policy whose decisions come from costs it measures while running, because the best fixed cap is $J = 2$ on the M4 and $J = 4$ on the T4. It has three parts. First, pin each agent to a slot, so $K = 1$ stops leaving a slot unused. Second, run a ready continuation before a new task, with an aging term so a long task cannot wait forever, and admit a new task when the server would otherwise sit idle and the budget can hold the context growth we have actually seen. This is meant to keep the hit rate of the cap while cutting the wait that short tasks pay. Third, when a tool runs long, choose between keeping the slot, saving it to SSD, and dropping it from the measured costs. On the M4 that save is under a second, and an 8K re-prefill is 44 seconds. On the T4 the same save is 8.95 seconds against a 5.1-second re-prefill, so a save pays only when it is written during a long tool wait. We plan to log the decision time and count it in the latency measurement.
+For Phase 2 we want one policy whose decisions come from costs it measures while running, because the best fixed cap is $J = 2$ on the M4 and $J = 4$ on the T4. It keeps the queue and cache paths of our design memo but replaces its memory watermark, since resident memory never moves and stopping admission is the fixed cap that loses on the T4. Appendix~\ref{app:cost} fills the memo's retention score with the costs measured here. First, pin each agent to a slot, so $K = 1$ stops leaving a slot unused. Second, run a ready continuation before a new task, with an aging term so a long task cannot wait forever, admit any task that has waited longer than a fixed bound, and otherwise admit a new task when the server would otherwise sit idle and the budget can hold the context growth we have actually seen. This is meant to keep the hit rate of the cap while cutting the wait that short tasks pay. Third, when a tool runs long, choose between keeping the slot, saving it to SSD, and dropping it from the measured costs. On the M4 that save is under a second, and an 8K re-prefill is 44 seconds. On the T4 the same save is 8.95 seconds against a 5.1-second re-prefill, so a save pays only when it is written during a long tool wait. We plan to log the decision time and count it in the latency measurement.
 
-We also plan to keep the comparisons on one model, one precision, and the same output lengths. The baselines are a plain FIFO, the best fixed setup checked on dev for each machine ($J = 2$ on the M4 and $J = 4$ on the T4), and \texttt{-{}-cache-ram} as the simple fixed cache, together with queue only, cache only, and both together. We will also rerun the 0.5 per minute arrival and the zero-delay case, where there is little eviction to remove, so the policy should not help much there. A speedup has to show up as less repeated prefill. Dropping tasks or shortening outputs does not count.
+We also plan to keep the comparisons on one model, one precision, and the same output lengths. The baselines are a plain FIFO, the best fixed setup checked on dev for each machine ($J = 2$ on the M4 and $J = 4$ on the T4), \texttt{-{}-cache-ram} as the simple fixed cache, and a fixed-TTL policy that pins a waiting agent's slot for a set time, together with queue only, cache only, and both together. We will draw more repeats from the task pool and rerun the 0.5 per minute arrival and the zero-delay case, where there is little eviction to remove, so the policy should not help much there. A speedup has to show up as less repeated prefill. Dropping tasks or shortening outputs does not count.
 
 \section{Limits}
 
-Eight tasks and three repeats, or two repeats for the 36K run and for the delay and arrival sweeps, mean that P95 only describes these runs. The M4 runs were done once per repeat. On the M5, three trials of repeat 0 on identical inputs varied by 11\% for uncapped FIFO and 2\% for the $J = 2$ cap, and the cap was ahead in every trial, so M4 differences under about 20\% should be read as ties. On the T4, run-to-run variation was at most 1.3\% (Table A5). All runs start from a warm server with empty slots; loading the model takes 0.66 seconds on the M4 and is excluded. RSS under-counts Metal allocations. One launch was on battery; we moved it out of the results and reran it on AC.
-
+Eight tasks per run drawn from a pool of 20, and three repeats, or two for the 36K run and for the delay and arrival sweeps, mean that P95 only describes these runs and per-repeat gains depend on the task mix; the eviction curve, pooled over hundreds of continuations, is more stable. The M4 runs were done once per repeat. On the M5, three trials of repeat 0 on identical inputs varied by 11\% for uncapped FIFO and 2\% for the $J = 2$ cap, and the cap was ahead in every trial, so M4 differences under about 20\% should be read as ties. On the T4, run-to-run variation was at most 1.3\% (Table A5). Runs exclude the 0.66-second model load.
 \onecolumn
 \appendix
 \renewcommand{\thesection}{\Alph{section}}
@@ -155,7 +154,7 @@ M5 run-to-run noise trials & \code{runs/m5-noise/} \\
 \end{tabular}
 \end{center}
 
-Every number in this report is regenerated from the raw logs, without the model or a GPU, by \texttt{python -m phase1.final --results-dir runs/final --main-arrival poisson:1} (M4) and \texttt{--results-dir runs/aws-gpu --main-arrival scaled:3.5} (T4). Each run records its git commit, server command, power state and (on the T4) GPU identity in \code{raw/runs_meta.jsonl}.
+Every number in this report is regenerated from the raw logs, without the model or a GPU, by \texttt{python -m phase1.final --results-dir runs/final --main-arrival poisson:1} (M4) and \texttt{--results-dir runs/aws-gpu --main-arrival scaled:3.5} (T4). Each run records its git commit, server command, power state and (on the T4) GPU identity in \code{raw/runs_meta.jsonl}. One M4 launch ran on battery; it was moved to \code{raw/interrupted/} and rerun on AC power.
 
 \section{Full tables}
 
@@ -277,6 +276,37 @@ $P=2$, $K=1$, $J=1$ & 1.01 & 0.93 & 1.65 & 24/24 & & 0.53 & 0.83 & 0.48 & 72/72 
 $P=2$, $K=1$, $J=\infty$ & 0.62 & 0.89 & 0.90 & 24/24 & & 0.91 & 0.94 & 0.86 & 72/72 \\
 FIFO + 3 GiB host prompt cache & 0.81 & 1.00 & 0.99 & 24/24 & & 1.00 & 1.00 & 1.00 & 72/72 \\
 $P=4$, $K=4$, 6K tokens per slot & 0.42 & 0.55 & 1.45 & 10/24 & & 0.44 & 0.64 & 0.69 & 30/72 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Cost model}\label{app:cost}
+
+A continuation whose history was lost recomputes its task-specific history of $H_i$ tokens (the shared 4,891-token prefix usually survives), so
+\begin{equation*}
+C^{\mathrm{reprefill}}_i = H_i / r_{\mathrm{prefill}} .
+\end{equation*}
+Under contention, a miss recomputes a median of 797 tokens at 6.0 s per 1,000 tokens on the M4 (4.8 s) and 1,123 tokens at 0.7 s per 1,000 tokens on the T4 (0.8 s). The mean tool time per step is 2.9 s on both platforms.
+
+\textbf{Admission.} Admitting a task beyond the slot count fills idle server time but makes returning tasks pay $C^{\mathrm{reprefill}}$. The ratio $\rho = C^{\mathrm{reprefill}} / T_{\mathrm{tool}}$ compares the two: $\rho \approx 1.6$ on the M4, where the cap $J = 2$ wins, and $\rho \approx 0.27$ on the T4, where it loses. Two platforms give two points and do not fix the crossover; the tool-delay sweep changes $T_{\mathrm{tool}}$ on one platform and is how Phase 2 will locate it.
+
+\textbf{Retention.} Our design memo scores keeping agent $i$'s state for time $\tau$ as
+\begin{equation*}
+R_i(\tau) = P(D_i \le \tau)\, C^{\mathrm{reprefill}}_i - C^{\mathrm{memory}}_i(\tau),
+\end{equation*}
+where $D_i$ is the remaining tool time. Phase 1 supplies $C^{\mathrm{reprefill}}_i$ from the measured prefill rate and $P(D_i \le \tau)$ from the tool-delay distribution. Saving and releasing the slot instead of keeping it pays when the save finishes within the tool wait ($T_{\mathrm{save}} < D_i$) and the restore is cheaper than recomputation ($T_{\mathrm{restore}} < C^{\mathrm{reprefill}}_i$). For an 8K state, the M4 needs 0.37 s to save and 0.35 s to restore against 44 s to recompute, so saving almost always pays; the T4 needs 8.95 s to save, so saving pays only during tool waits longer than about 9 s.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\caption{Shape of the 20 recorded eval tasks by environment-check outcome (min / median / max).}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Outcome & Tasks & Model calls & Longest prompt (tokens) & Output tokens per task (median) \\
+\midrule
+Passed & 3 & 12 / 15 / 16 & 6,693 / 9,302 / 9,340 & 833 \\
+Failed & 17 & 2 / 8 / 20 & 5,030 / 6,240 / 9,677 & 696 \\
 \bottomrule
 \end{tabular}
 \end{table}
