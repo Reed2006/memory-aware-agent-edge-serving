@@ -1,7 +1,9 @@
 # Phase 2 supplement: arrival rate and workload mix (pre-registration)
 
-Written 2026-11-22, about 20:50 PST, before any run of this supplement started. The four
-manifests listed below were created and committed before the first run.
+Written 2026-11-22 before any run of this supplement started. This file and the four
+manifests listed below were committed in `308aa6a` at 20:33 PST; the driver started its
+first (warm-up) replay at 20:34. (The first version said "about 20:50"; that estimate was
+wrong and is corrected here. Paths and predictions are unchanged.)
 
 This supplement does not change the pre-registered Phase 2 analysis:
 - the eval confirmatory table stays as it is;

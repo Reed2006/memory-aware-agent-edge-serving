@@ -7,7 +7,7 @@ Analysis of every completed Phase 2 run on the M4 Air (16 GB), written 2026-11-2
 | dev | 57 |
 | eval | 43 (T0 + T1) |
 | sensitivity | 16 (gap-recorded and gap-long) |
-| frontier supplement | `docs/PHASE2_FRONTIER_PREREG.md` |
+| frontier supplement | [5_FRONTIER_PREREG.md](5_FRONTIER_PREREG.md) |
 
 Sections 1–4 are post-hoc readings of data that also chose the configurations.
 Section 5 is the pre-registered supplement on new seeds. Nothing here changes the
@@ -221,16 +221,16 @@ trade-off. It is a very uneven one:
 
 ## Reproducing
 
-- **Per-seed tables (sections 1–2):** `runs/phase2-m4-air-16g-r2/{dev,eval,sensitivity}/summary/run_summary.csv`.
+- **Per-seed tables (sections 1–2):** `runs/phase2/2_m4_campaign/{dev,eval,sensitivity}/summary/run_summary.csv`.
 - **Contention delay and the δ shift (sections 3–4):** computed from the `jobs.csv`
   files in the same directories, as latency minus `isolated_s` and
   latency / (`isolated_s` + δ).
 - **Supplement (section 5):**
 
 ```bash
-bash scripts/phase2_frontier.sh
+bash scripts/phase2/3_frontier_run.sh
 ```
 
 ```bash
-.venv/bin/python scripts/phase2_frontier_check.py
+.venv/bin/python scripts/phase2/3_frontier_check.py
 ```

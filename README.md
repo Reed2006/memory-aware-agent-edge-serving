@@ -1,4 +1,62 @@
-# Memory-Aware Agent Edge Serving: Phase 1
+# Memory-Aware Agent Edge Serving
+
+## Phase 2
+
+**Start here: [`docs/phase2/0_README.md`](docs/phase2/0_README.md)**. It maps every
+Phase 2 doc, script and result folder; the docs are numbered in reading order.
+**Open work and the handoff for the second server:** [`docs/phase2/7_TODO.md`](docs/phase2/7_TODO.md).
+
+Phase 2 has a separate implementation in `phase2/`:
+- explicit slot affinity;
+- FIFO, fixed-cap and TTL baselines;
+- continuation-first scheduling with aging;
+- cost-based cache leases;
+- quota-bounded SSD checkpointing.
+
+The frozen Phase 1 code and results remain available below.
+
+| Phase 2 folder | Contents |
+| --- | --- |
+| `docs/phase2/` | `0_README` map, `1_PLAN`, `2_RUNBOOK`, `3_PILOT_REVIEW`, `4_FAIRNESS_EFFICIENCY` (results), `5_`/`6_` pre-registrations, `7_TODO` |
+| `scripts/phase2/` | Stage-numbered drivers: `2_campaign`, `3_frontier_*`, `4_rate_mix_*` |
+| `runs/phase2/` | `1_m4_pilot`, `2_m4_campaign`, `3_m4_frontier`, `4_m4_rate_mix` |
+
+**Status (2026-11-22).**
+- The M4 campaign (dev 57, eval 43, sensitivity 16 runs) and the frontier supplement are
+  complete.
+- The arrival-rate / mix supplement is running.
+- The pre-registered final policy `joint` beats FIFO but ties the re-tuned simple
+  baselines.
+- Checkpointed sharing trades a small efficiency cost for much lower tail slowdown under
+  contention.
+
+See `docs/phase2/4_FAIRNESS_EFFICIENCY.md`.
+
+The model-free checks are:
+
+```bash
+.venv/bin/python -m pytest tests -q --cov=phase2 --cov-report=term-missing
+bash -n scripts/phase2.sh
+bash scripts/phase2.sh
+```
+
+`phase2.plan create/show` and `phase2.plan run` without `--execute` only prepare or
+display experiment commands. They never start a model server. Real runs require
+an explicitly started, dedicated backend, a reviewed cost profile, and a stable
+platform ID; evaluation manifests also require parameters frozen on development
+workloads. See the run instructions before starting those experiments.
+
+| Phase 2 module | Purpose |
+| --- | --- |
+| `state.py`, `scheduler.py` | Validated policies, task/slot state, bounded dispatch and expiring reservations |
+| `costs.py`, `checkpoints.py` | Observed incremental costs, wait distributions, state versions and checkpoint quota |
+| `bench.py`, `server.py`, `probes.py` | Frozen replay, explicit backend setup, API/cost/interference probes and calibration |
+| `plan.py`, `scripts/phase2.sh` | Reviewable manifests, pinned input hashes and explicit execution |
+| `freeze.py` | Pre-declared rules that turn a dev summary into the frozen eval config |
+| `campaign.py`, `scripts/phase2_night.sh` | Resumable overnight campaign: environment lock, safe stop, resume, watchdog |
+| `summarize.py`, `plot.py` | Failed-run accounting, paired comparisons against several baselines, fairness, memory, mechanism counts and figures |
+
+## Phase 1
 
 CSE 291A (Fall 2026), Option 1. Several multi-step LLM agents share one inference server with a
 fixed KV-cache budget. Phase 1 implements a FIFO baseline with fixed request concurrency and an

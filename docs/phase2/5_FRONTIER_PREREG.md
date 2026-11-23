@@ -1,6 +1,8 @@
 # Phase 2 supplement: fairness–efficiency frontier (pre-registration)
 
 Written 2026-11-21, about 00:50 PST, before any run of this supplement started.
+(2026-11-22: file paths updated for the numbered `runs/phase2/` and `scripts/phase2/`
+layout; nothing else changed.)
 This is an exploratory supplement. It does not change the pre-registered Phase 2
 analysis: the eval confirmatory table and the sensitivity conditions stay as they are,
 and the frozen final policy stays `joint`.
@@ -33,7 +35,7 @@ The proposed mechanism has two parts:
 ## Design
 
 **Seeds: 3116, 3129, 3120.**
-- `scripts/phase2_frontier_seeds.py` chose them before any run: they are the top 3 of
+- `scripts/phase2/3_frontier_seeds.py` chose them before any run: they are the top 3 of
   the never-run seeds 3101–3130.
 - The ranking uses an a priori load indicator: the mean admission wait of a 2-server
   FCFS run-to-completion queue serving each job for its cost-model isolated time.
@@ -58,21 +60,21 @@ parameter hashes:
   the same 20 tasks;
 - gap `lognormal:2:1`, arrival `scaled:1`;
 - P = 2, ctx 24576, cache-ram 0, no idle-slot cache, same model and server build;
-- cost profile `runs/phase2-m4-air-16g-r2/profiles/profile.json`;
+- cost profile `runs/phase2/2_m4_campaign/profiles/profile.json`;
 - one unmeasured warm-up replay before the first measured run;
 - policy order rotated per seed, as the manifest writes it, with one trial per cell.
 
 **Files.**
-- Manifest: `runs/phase2-m4-air-16g-r2-frontier/manifests/frontier.json`, written by
+- Manifest: `runs/phase2/3_m4_frontier/manifests/frontier.json`, written by
   `phase2.plan create`.
-- Results: `runs/phase2-m4-air-16g-r2-frontier/eval/`.
-- Driver: `scripts/phase2_frontier.sh`.
+- Results: `runs/phase2/3_m4_frontier/eval/`.
+- Driver: `scripts/phase2/3_frontier_run.sh`.
 - Runs start only after the main campaign session has ended.
 - A run starts only if its 30-minute estimate ends before 09:00. Seeds run in order, so
   a cut leaves whole seeds.
 
 **Slowdown references.** The isolated `fixed-k1-j1` run of the main eval
-(`--reference-dir runs/phase2-m4-air-16g-r2/eval`). It covers the same 20 tasks.
+(`--reference-dir runs/phase2/2_m4_campaign/eval`). It covers the same 20 tasks.
 
 ## Metrics
 
