@@ -1,0 +1,1452 @@
+{
+  "schema": "phase2-experiment-manifest-v1",
+  "schema_version": 2,
+  "phase": "sensitivity",
+  "platform_id": "m4-air-16g",
+  "workload": {
+    "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+    "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+  },
+  "cost_profile": {
+    "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+    "sha256": "e906b2cbc91803abc1070be3842ed761ef621bba0938f5c020e1c5752217be6e"
+  },
+  "frozen_config": {
+    "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/manifests/frozen.json",
+    "sha256": "18b9ce248911f0b6c41f13a1852822ec7e5630608092ea27e74ed6ec53106858"
+  },
+  "short_cutoff": 782.5,
+  "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix",
+  "seeds": [
+    1101,
+    1102,
+    1103
+  ],
+  "trials": 1,
+  "num_jobs": 20,
+  "base_url": "http://127.0.0.1:18080",
+  "timeout_s": 3600.0,
+  "request_timeout_s": 300.0,
+  "server_record": "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+  "kv_precision": "f16",
+  "policy_order": "left rotation by trial; identical seed/trial schedule per condition",
+  "execution_default": "dry-run; backend must already be configured",
+  "runs": [
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "config": {
+        "name": "fifo",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": false,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "fifo",
+        "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+        "run_ids": [
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.7107807187087859,
+        "slowdown_short_mean": 6.701006168871164
+      },
+      "seed": 1101,
+      "trial": 0,
+      "trial_order": 0,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/fifo/S1101-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "fifo",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/fifo/S1101-T0",
+        "--policies",
+        "fifo",
+        "--seeds",
+        "1101",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "0",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"fifo\":{\"affinity\":false,\"aging_s\":30.0,\"cache_policy\":\"lru\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":10.0,\"queue_rule\":\"fifo\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "affinity-fixed-best",
+      "policy": "affinity-fixed",
+      "config": {
+        "name": "affinity-fixed",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 2,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": true,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "affinity-fixed-j2",
+        "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+        "run_ids": [
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0871403693988462,
+        "slowdown_short_mean": 6.49306707785352
+      },
+      "seed": 1101,
+      "trial": 0,
+      "trial_order": 1,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/affinity-fixed-best/S1101-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "affinity-fixed-best",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/affinity-fixed-best/S1101-T0",
+        "--policies",
+        "affinity-fixed",
+        "--seeds",
+        "1101",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "1",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"affinity-fixed\":{\"affinity\":true,\"aging_s\":30.0,\"cache_policy\":\"lru\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":2,\"lease_max_s\":10.0,\"queue_rule\":\"fifo\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "joint",
+      "policy": "joint",
+      "config": {
+        "name": "joint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "joint-a80",
+        "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+        "run_ids": [
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0255765154349248,
+        "slowdown_short_mean": 5.108352863562734
+      },
+      "seed": 1101,
+      "trial": 0,
+      "trial_order": 2,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint/S1101-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "joint",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint/S1101-T0",
+        "--policies",
+        "joint",
+        "--seeds",
+        "1101",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "2",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"joint\":{\"affinity\":true,\"aging_s\":80.0,\"cache_policy\":\"cost\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":60.0,\"queue_rule\":\"continuation\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "joint-checkpoint",
+      "policy": "joint-checkpoint",
+      "config": {
+        "name": "joint-checkpoint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": true,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "joint-checkpoint-a80",
+        "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+        "run_ids": [
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.9967132416017801,
+        "slowdown_short_mean": 4.627355008135862
+      },
+      "seed": 1101,
+      "trial": 0,
+      "trial_order": 3,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint-checkpoint/S1101-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "joint-checkpoint",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint-checkpoint/S1101-T0",
+        "--policies",
+        "joint-checkpoint",
+        "--seeds",
+        "1101",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "3",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"joint-checkpoint\":{\"affinity\":true,\"aging_s\":80.0,\"cache_policy\":\"cost\",\"checkpoint\":true,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":60.0,\"queue_rule\":\"continuation\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "affinity-fixed-best",
+      "policy": "affinity-fixed",
+      "config": {
+        "name": "affinity-fixed",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 2,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": true,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "affinity-fixed-j2",
+        "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+        "run_ids": [
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0871403693988462,
+        "slowdown_short_mean": 6.49306707785352
+      },
+      "seed": 1102,
+      "trial": 0,
+      "trial_order": 0,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/affinity-fixed-best/S1102-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "affinity-fixed-best",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/affinity-fixed-best/S1102-T0",
+        "--policies",
+        "affinity-fixed",
+        "--seeds",
+        "1102",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "0",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"affinity-fixed\":{\"affinity\":true,\"aging_s\":30.0,\"cache_policy\":\"lru\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":2,\"lease_max_s\":10.0,\"queue_rule\":\"fifo\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "joint",
+      "policy": "joint",
+      "config": {
+        "name": "joint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "joint-a80",
+        "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+        "run_ids": [
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0255765154349248,
+        "slowdown_short_mean": 5.108352863562734
+      },
+      "seed": 1102,
+      "trial": 0,
+      "trial_order": 1,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint/S1102-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "joint",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint/S1102-T0",
+        "--policies",
+        "joint",
+        "--seeds",
+        "1102",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "1",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"joint\":{\"affinity\":true,\"aging_s\":80.0,\"cache_policy\":\"cost\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":60.0,\"queue_rule\":\"continuation\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "joint-checkpoint",
+      "policy": "joint-checkpoint",
+      "config": {
+        "name": "joint-checkpoint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": true,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "joint-checkpoint-a80",
+        "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+        "run_ids": [
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.9967132416017801,
+        "slowdown_short_mean": 4.627355008135862
+      },
+      "seed": 1102,
+      "trial": 0,
+      "trial_order": 2,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint-checkpoint/S1102-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "joint-checkpoint",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint-checkpoint/S1102-T0",
+        "--policies",
+        "joint-checkpoint",
+        "--seeds",
+        "1102",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "2",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"joint-checkpoint\":{\"affinity\":true,\"aging_s\":80.0,\"cache_policy\":\"cost\",\"checkpoint\":true,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":60.0,\"queue_rule\":\"continuation\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "config": {
+        "name": "fifo",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": false,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "fifo",
+        "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+        "run_ids": [
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.7107807187087859,
+        "slowdown_short_mean": 6.701006168871164
+      },
+      "seed": 1102,
+      "trial": 0,
+      "trial_order": 3,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/fifo/S1102-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "fifo",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/fifo/S1102-T0",
+        "--policies",
+        "fifo",
+        "--seeds",
+        "1102",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "3",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"fifo\":{\"affinity\":false,\"aging_s\":30.0,\"cache_policy\":\"lru\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":10.0,\"queue_rule\":\"fifo\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "joint",
+      "policy": "joint",
+      "config": {
+        "name": "joint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "joint-a80",
+        "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+        "run_ids": [
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0255765154349248,
+        "slowdown_short_mean": 5.108352863562734
+      },
+      "seed": 1103,
+      "trial": 0,
+      "trial_order": 0,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint/S1103-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "joint",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint/S1103-T0",
+        "--policies",
+        "joint",
+        "--seeds",
+        "1103",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "0",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"joint\":{\"affinity\":true,\"aging_s\":80.0,\"cache_policy\":\"cost\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":60.0,\"queue_rule\":\"continuation\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "joint-checkpoint",
+      "policy": "joint-checkpoint",
+      "config": {
+        "name": "joint-checkpoint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": true,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "joint-checkpoint-a80",
+        "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+        "run_ids": [
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.9967132416017801,
+        "slowdown_short_mean": 4.627355008135862
+      },
+      "seed": 1103,
+      "trial": 0,
+      "trial_order": 1,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint-checkpoint/S1103-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "joint-checkpoint",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/joint-checkpoint/S1103-T0",
+        "--policies",
+        "joint-checkpoint",
+        "--seeds",
+        "1103",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "1",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"joint-checkpoint\":{\"affinity\":true,\"aging_s\":80.0,\"cache_policy\":\"cost\",\"checkpoint\":true,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":60.0,\"queue_rule\":\"continuation\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "config": {
+        "name": "fifo",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": false,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "fifo",
+        "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+        "run_ids": [
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.7107807187087859,
+        "slowdown_short_mean": 6.701006168871164
+      },
+      "seed": 1103,
+      "trial": 0,
+      "trial_order": 2,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/fifo/S1103-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "fifo",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/fifo/S1103-T0",
+        "--policies",
+        "fifo",
+        "--seeds",
+        "1103",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "2",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"fifo\":{\"affinity\":false,\"aging_s\":30.0,\"cache_policy\":\"lru\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":0,\"lease_max_s\":10.0,\"queue_rule\":\"fifo\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    },
+    {
+      "label": "affinity-fixed-best",
+      "policy": "affinity-fixed",
+      "config": {
+        "name": "affinity-fixed",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 2,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": true,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+      "server_requirements": {
+        "P": 2,
+        "ctx_size": 24576,
+        "kv_unified": false,
+        "cache_ram_mib": 0,
+        "cache_idle_slots": false
+      },
+      "server_group": "P2-C24576-RAM0-idle0",
+      "reference_only": false,
+      "evidence": {
+        "source_policy_label": "affinity-fixed-j2",
+        "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+        "run_ids": [
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0871403693988462,
+        "slowdown_short_mean": 6.49306707785352
+      },
+      "seed": 1103,
+      "trial": 0,
+      "trial_order": 3,
+      "workload": {
+        "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "sha256": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+      },
+      "condition": "arrival-half",
+      "gap": "lognormal:2:1",
+      "arrival": "scaled:0.5",
+      "results_dir": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/affinity-fixed-best/S1103-T0",
+      "command": [
+        "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        "-m",
+        "phase2.bench",
+        "--workload",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_eval.json",
+        "--policy-label",
+        "affinity-fixed-best",
+        "--results-dir",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/4_m4_rate_mix/sensitivity/arrival-half/affinity-fixed-best/S1103-T0",
+        "--policies",
+        "affinity-fixed",
+        "--seeds",
+        "1103",
+        "--trials",
+        "1",
+        "--trial-start",
+        "0",
+        "--trial-order-start",
+        "3",
+        "--num-jobs",
+        "20",
+        "--gap",
+        "lognormal:2:1",
+        "--arrival",
+        "scaled:0.5",
+        "--base-url",
+        "http://127.0.0.1:18080",
+        "--server-record",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/.server.json",
+        "--cost-profile",
+        "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2/2_m4_campaign/profiles/profile.json",
+        "--platform-id",
+        "m4-air-16g",
+        "--kv-precision",
+        "f16",
+        "--timeout-s",
+        "3600.0",
+        "--request-timeout-s",
+        "300.0",
+        "--skip-done",
+        "--policy-overrides",
+        "{\"affinity-fixed\":{\"affinity\":true,\"aging_s\":30.0,\"cache_policy\":\"lru\",\"checkpoint\":false,\"checkpoint_budget_bytes\":4294967296,\"checkpoint_margin_s\":0.05,\"checkpoint_use_probability\":0.8,\"concurrency\":2,\"ctx_per_slot\":12288,\"jobs_active\":2,\"lease_max_s\":10.0,\"queue_rule\":\"fifo\",\"slots\":2,\"ttl_s\":2.0}}"
+      ]
+    }
+  ]
+}

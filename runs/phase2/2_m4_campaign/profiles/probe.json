@@ -1,0 +1,46 @@
+{
+  "schema": "phase2-cost-profile-v1",
+  "metadata": {
+    "platform_id": "m4-air-16g",
+    "model_hash": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+    "kv_precision": "f16",
+    "example_only": false,
+    "probe_records_hash": "9fb28fff7be2b27e60481c4c6a27eea6c2b457ee135059c99d73d4f020eb2564",
+    "prefill_buckets": [
+      "1",
+      "2"
+    ],
+    "wait_records_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "sources": [
+      "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/probes/affinity/raw/probes.jsonl",
+      "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/probes/incremental-recompute/raw/probes.jsonl",
+      "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/probes/restore/raw/probes.jsonl",
+      "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/probes/interference/raw/probes.jsonl"
+    ]
+  },
+  "prefill": {
+    "1": {
+      "seconds_per_token": 0.006130988654671576,
+      "intercept_s": 0
+    },
+    "2": {
+      "seconds_per_token": 0.006566934396371134,
+      "intercept_s": 0
+    }
+  },
+  "decode": {
+    "seconds_per_token": 0.05408079365079366
+  },
+  "save": {
+    "seconds_per_token": 6.987480134172198e-05,
+    "intercept_s": 0
+  },
+  "restore": {
+    "seconds_per_token": 1.9795807874881067e-05,
+    "intercept_s": 0
+  },
+  "waits_s": [],
+  "ewma_alpha": 0.2,
+  "fallback_wait_s": 1,
+  "max_wait_samples": 512
+}

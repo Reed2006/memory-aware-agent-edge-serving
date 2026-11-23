@@ -1,0 +1,92 @@
+{
+  "schema": "phase2-frozen-config-v1",
+  "frozen": true,
+  "selected_on": "dev",
+  "short_cutoff": 782.5,
+  "policies": [
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "config": {}
+    },
+    {
+      "label": "best-fixed",
+      "policy": "fixed",
+      "config": {
+        "concurrency": 2,
+        "jobs_active": 2
+      }
+    },
+    {
+      "label": "affinity-fixed-best",
+      "policy": "affinity-fixed",
+      "config": {
+        "concurrency": 2,
+        "jobs_active": 2
+      }
+    },
+    {
+      "label": "affinity",
+      "policy": "affinity",
+      "config": {}
+    },
+    {
+      "label": "fixed-ttl",
+      "policy": "ttl",
+      "config": {
+        "ttl_s": 10.0
+      }
+    },
+    {
+      "label": "queue",
+      "policy": "queue",
+      "config": {
+        "queue_rule": "continuation",
+        "aging_s": 80.0
+      }
+    },
+    {
+      "label": "cache",
+      "policy": "cache",
+      "config": {
+        "aging_s": 80.0
+      }
+    },
+    {
+      "label": "joint",
+      "policy": "joint",
+      "config": {
+        "queue_rule": "continuation",
+        "aging_s": 80.0
+      }
+    },
+    {
+      "label": "joint-checkpoint",
+      "policy": "joint-checkpoint",
+      "config": {
+        "queue_rule": "continuation",
+        "aging_s": 80.0,
+        "checkpoint_budget_bytes": 4294967296
+      }
+    },
+    {
+      "label": "ram-cache",
+      "policy": "ram-cache",
+      "config": {},
+      "resources": {
+        "cache_ram_mib": 3072,
+        "cache_idle_slots": true
+      }
+    }
+  ],
+  "selection_rules": "(all on seed-averaged dev means of runs with no failures):\n  best fixed   highest completed tasks/min among the fixed (K, J) rows and FIFO;\n               ties go to the lower mean per-run P95.\n  B2F          the best affinity-fixed row is kept only if it beats best fixed.\n  fixed TTL    highest tasks/min among the TTL rows.\n  queue rule   attained-service replaces continuation only if it is faster on dev.\n  aging        among joint-a* rows, the highest tasks/min whose short-task slowdown\n               is no worse than best fixed's; if none qualifies, the fairest one.\n  short cutoff median expected output tokens of the dev tasks.",
+  "dev_summary": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/summary/policy_summary.csv",
+  "notes": [
+    "best fixed: fixed-k2-j2 (1.069 tasks/min; candidates: fixed-k2-j2=1.069, fixed-k1-j1=0.8692, fixed-k2-j3=0.728, fixed-k2-j4=0.7169, fifo=0.7108, fixed-k1-jinf=0.537)",
+    "B2F kept: affinity-fixed-j2 beats best fixed on dev",
+    "fixed TTL: ttl-10",
+    "queue rule: continuation",
+    "aging: joint-a80 (fastest within best-fixed short-task slowdown)",
+    "short cutoff: 782.5 expected output tokens (dev median)"
+  ]
+}

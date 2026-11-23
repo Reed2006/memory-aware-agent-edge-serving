@@ -1,0 +1,40 @@
+[2026-11-18 13:56:13] session started (deadline Wed 21:00)
+[2026-11-18 13:56:15] stage smoke
+[2026-11-18 14:04:05] stage dev-manifest
+[2026-11-18 14:04:05] warm-up: unmeasured replay in campaign/warmup/20261118-140405-1
+[2026-11-18 14:08:36] stage dev-runs
+[2026-11-18 15:51:08] stage dev-screen-summary
+[2026-11-18 15:51:11] stage dev-confirm-manifest
+[2026-11-18 15:51:11] stage dev-confirm-runs
+[2026-11-18 19:10:36] stage dev-summary
+[2026-11-18 19:10:40] stage freeze
+[2026-11-18 19:10:41] dev is finished. Review the frozen config, then: bash scripts/phase2_night.sh approve
+[2026-11-18 19:10:41] session ended: waiting for review of manifests/frozen.json
+[2026-11-18 19:11:26] session started (deadline Wed 21:00)
+[2026-11-18 19:11:26] stage eval-manifest
+[2026-11-18 19:11:29] warm-up: unmeasured replay in campaign/warmup/20261118-191129-1
+[2026-11-18 19:15:32] stage eval-runs
+[2026-11-18 20:22:26] session ended: deadline
+[2026-11-18 23:48:17] session started (deadline Thu 10:00)
+[2026-11-18 23:48:19] warm-up: unmeasured replay in campaign/warmup/20261118-234819-1
+[2026-11-18 23:52:05] stage eval-runs
+[2026-11-19 09:29:37] session ended: deadline
+[2026-11-19 15:21:25] session started (deadline Thu 21:00)
+[2026-11-19 15:21:27] warm-up: unmeasured replay in campaign/warmup/20261119-152127-1
+[2026-11-19 15:25:08] stage eval-runs
+[2026-11-19 17:40:17] stage eval-runs-ram
+[2026-11-19 19:17:21] stage eval-trials-manifest
+[2026-11-19 19:17:24] stage eval-trials
+[2026-11-19 21:00:31] session ended: deadline
+[2026-11-20 02:24:49] session started (deadline Fri 10:00)
+[2026-11-20 02:24:51] warm-up: unmeasured replay in campaign/warmup/20261120-022451-1
+[2026-11-20 02:28:50] stage eval-trials
+[2026-11-20 06:11:37] stage eval-summary
+[2026-11-20 06:11:42] stage sensitivity-manifest
+[2026-11-20 06:11:42] stage sensitivity-runs
+[2026-11-20 09:50:19] session ended: deadline
+[2026-11-21 00:46:39] session started (deadline Sat 09:00)
+[2026-11-21 00:46:41] warm-up: unmeasured replay in campaign/warmup/20261121-004641-1
+[2026-11-21 00:50:37] stage sensitivity-runs
+[2026-11-21 05:08:05] stage sensitivity-summary
+[2026-11-21 05:08:10] session ended: complete

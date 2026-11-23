@@ -1,0 +1,605 @@
+{
+  "schema": "phase2-frozen-config-v1",
+  "frozen": true,
+  "selected_on": "dev",
+  "short_cutoff": 782.5,
+  "policies": [
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "config": {
+        "name": "fifo",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": false,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+      "evidence": {
+        "source_policy_label": "fifo",
+        "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+        "run_ids": [
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-fifo-42eadd78d3bc-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fifo/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.7107807187087859,
+        "slowdown_short_mean": 6.701006168871164
+      }
+    },
+    {
+      "label": "best-fixed",
+      "policy": "fixed",
+      "config": {
+        "name": "fixed",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 2,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": false,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "f4348eb5536d21f11b5e74cbab104e6b34b6051f73235b393c9b0781305d2e1c",
+      "evidence": {
+        "source_policy_label": "fixed-k2-j2",
+        "param_hash": "f4348eb5536d21f11b5e74cbab104e6b34b6051f73235b393c9b0781305d2e1c",
+        "run_ids": [
+          "phase2-fixed-f4348eb5536d-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-fixed-f4348eb5536d-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-fixed-f4348eb5536d-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fixed-k2-j2/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fixed-k2-j2/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/fixed-k2-j2/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0687621637861795,
+        "slowdown_short_mean": 7.0362257093246
+      }
+    },
+    {
+      "label": "affinity-fixed-best",
+      "policy": "affinity-fixed",
+      "config": {
+        "name": "affinity-fixed",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 2,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": true,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+      "evidence": {
+        "source_policy_label": "affinity-fixed-j2",
+        "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+        "run_ids": [
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-affinity-fixed-654f202a9b62-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity-fixed-j2/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0871403693988462,
+        "slowdown_short_mean": 6.49306707785352
+      }
+    },
+    {
+      "label": "affinity",
+      "policy": "affinity",
+      "config": {
+        "name": "affinity",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": true,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "4521cb836cf7bacf3e75f92fa278da7483d2c02f8a876b8d7d8157222fedf8af",
+      "evidence": {
+        "source_policy_label": "affinity",
+        "param_hash": "4521cb836cf7bacf3e75f92fa278da7483d2c02f8a876b8d7d8157222fedf8af",
+        "run_ids": [
+          "phase2-affinity-4521cb836cf7-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-affinity-4521cb836cf7-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-affinity-4521cb836cf7-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/affinity/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.7010216408861499,
+        "slowdown_short_mean": 6.343908559270925
+      }
+    },
+    {
+      "label": "ram-cache",
+      "policy": "ram-cache",
+      "config": {
+        "name": "ram-cache",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "lru",
+        "affinity": false,
+        "aging_s": 30.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "32f7767bedf60fbdecdedd94d5ae8215678a3d0dc5ce6fe1b01479e8ab9e9e2c",
+      "evidence": {
+        "source_policy_label": "ram-cache",
+        "param_hash": "32f7767bedf60fbdecdedd94d5ae8215678a3d0dc5ce6fe1b01479e8ab9e9e2c",
+        "run_ids": [
+          "phase2-ram-cache-32f7767bedf6-Web1f94eb47ec-Ce906b2cbc918-05fe343bb309-S101-T0",
+          "phase2-ram-cache-32f7767bedf6-Web1f94eb47ec-Ce906b2cbc918-05fe343bb309-S102-T0",
+          "phase2-ram-cache-32f7767bedf6-Web1f94eb47ec-Ce906b2cbc918-05fe343bb309-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/ram-cache/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/ram-cache/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/ram-cache/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.6234234481205398,
+        "slowdown_short_mean": null
+      },
+      "resources": {
+        "cache_ram_mib": 3072,
+        "cache_idle_slots": true
+      }
+    },
+    {
+      "label": "fixed-ttl",
+      "policy": "ttl",
+      "config": {
+        "name": "ttl",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "ttl",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 15.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "f26b687ba47be96049c7b58fed7daa28940fb936510b56b65cb452d0166756c1",
+      "evidence": {
+        "source_policy_label": "ttl-15-a80",
+        "param_hash": "f26b687ba47be96049c7b58fed7daa28940fb936510b56b65cb452d0166756c1",
+        "run_ids": [
+          "phase2-ttl-f26b687ba47b-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-ttl-f26b687ba47b-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-ttl-f26b687ba47b-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/ttl-15-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/ttl-15-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/ttl-15-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0143949358548925,
+        "slowdown_short_mean": 5.191459100107774
+      }
+    },
+    {
+      "label": "queue",
+      "policy": "queue",
+      "config": {
+        "name": "queue",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "lru",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 10.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "7ce3b4904c89bf3794a87663d5474f068b6132936f01bf9982075e6d2813f35d",
+      "evidence": {
+        "source_policy_label": "queue-a80",
+        "param_hash": "7ce3b4904c89bf3794a87663d5474f068b6132936f01bf9982075e6d2813f35d",
+        "run_ids": [
+          "phase2-queue-7ce3b4904c89-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-queue-7ce3b4904c89-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-queue-7ce3b4904c89-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/queue-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/queue-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/queue-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.6523773508850984,
+        "slowdown_short_mean": 8.899470590092713
+      }
+    },
+    {
+      "label": "cache",
+      "policy": "cache",
+      "config": {
+        "name": "cache",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "fifo",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "cc2ea1d0fb5c9a94d96e5b26c1669a6defbff6ae2e566d1e91633afd218f5de4",
+      "evidence": {
+        "source_policy_label": "cache-a80",
+        "param_hash": "cc2ea1d0fb5c9a94d96e5b26c1669a6defbff6ae2e566d1e91633afd218f5de4",
+        "run_ids": [
+          "phase2-cache-cc2ea1d0fb5c-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-cache-cc2ea1d0fb5c-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-cache-cc2ea1d0fb5c-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/cache-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/cache-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/cache-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0004730810280045,
+        "slowdown_short_mean": 5.543738379994017
+      }
+    },
+    {
+      "label": "joint",
+      "policy": "joint",
+      "config": {
+        "name": "joint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": false,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+      "evidence": {
+        "source_policy_label": "joint-a80",
+        "param_hash": "4ed3bc9982022a76fd93bc2fab19fd90952f45fd43118752e94073c5766a2abc",
+        "run_ids": [
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-4ed3bc998202-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 1.0255765154349248,
+        "slowdown_short_mean": 5.108352863562734
+      }
+    },
+    {
+      "label": "joint-checkpoint",
+      "policy": "joint-checkpoint",
+      "config": {
+        "name": "joint-checkpoint",
+        "concurrency": 2,
+        "slots": 2,
+        "ctx_per_slot": 12288,
+        "jobs_active": 0,
+        "queue_rule": "continuation",
+        "cache_policy": "cost",
+        "affinity": true,
+        "aging_s": 80.0,
+        "ttl_s": 2.0,
+        "lease_max_s": 60.0,
+        "checkpoint": true,
+        "checkpoint_budget_bytes": 4294967296,
+        "checkpoint_margin_s": 0.05,
+        "checkpoint_use_probability": 0.8
+      },
+      "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+      "evidence": {
+        "source_policy_label": "joint-checkpoint-a80",
+        "param_hash": "a60b47038eeed80bbd9655615409b8cec649d70d071bf1396d373fb1472650dd",
+        "run_ids": [
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S101-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S102-T0",
+          "phase2-joint-checkpoint-a60b47038eee-Web1f94eb47ec-Ce906b2cbc918-57ff5a6338f4-S103-T0"
+        ],
+        "seeds": [
+          101,
+          102,
+          103
+        ],
+        "trials_by_seed": {
+          "101": [
+            0
+          ],
+          "102": [
+            0
+          ],
+          "103": [
+            0
+          ]
+        },
+        "raw_records": [
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S101-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S102-T0/raw/macro_runs.jsonl",
+          "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/dev/main/joint-checkpoint-a80/S103-T0/raw/macro_runs.jsonl"
+        ],
+        "jobs_per_min_mean": 0.9967132416017801,
+        "slowdown_short_mean": 4.627355008135862
+      }
+    }
+  ],
+  "final_label": "joint",
+  "selection_rules": "(seed-averaged dev means; matched seed/trial coverage):\n  best fixed   highest tasks/min among fixed and FIFO; ties use lower P95.\n  B2F          keep affinity-fixed only when it beats the best fixed baseline.\n  aging        fastest measured joint within best fixed's short-task slowdown;\n               if none qualifies, the fairest measured joint, explicitly flagged.\n  ablations    require measured Q/C/checkpoint/TTL with the chosen joint's aging\n               and matching active mechanism settings. No parameter transplant.\n  fixed TTL    fastest confirmed TTL at that same aging (bounded dev grid).\n  final        fastest confirmed cache/joint/checkpoint within the fairness bound;\n               if none qualifies, the fairest one, with fairness_passed=false.\n  short cutoff median expected output tokens of the source dev tasks.\n\nAll exported policies carry their complete measured configuration, its hash,\nraw run identities and seed/trial coverage. Missing confirmation stops freezing.",
+  "dev_summary": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/summary/policy_summary.csv",
+  "evidence": {
+    "schema": "phase2-freeze-evidence-v1",
+    "dev_summary": {
+      "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g-r2/dev/summary/policy_summary.csv",
+      "sha256": "fa45fab6783abba08f21d2619b1260b0f3c8d3046245247a6016c25c50dd1dc3"
+    },
+    "dev_workload": {
+      "path": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/final/workload_dev.json",
+      "sha256": "eb1f94eb47ec3ffdbecb247262f7949475c7ece290e516e0a00dd98e12ef5c14"
+    },
+    "comparison_identity": {
+      "platform_id": "m4-air-16g",
+      "workload_hash": "eb1f94eb47ec3ffdbecb247262f7949475c7ece290e516e0a00dd98e12ef5c14",
+      "model_hash": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+      "kv_precision": "f16",
+      "P": 2,
+      "ctx_size": 24576,
+      "kv_unified": false,
+      "gap_mode": "lognormal:2:1",
+      "arrival": "scaled:1",
+      "cost_hash": "e906b2cbc91803abc1070be3842ed761ef621bba0938f5c020e1c5752217be6e"
+    },
+    "selected_aging_s": 80.0,
+    "aging_fairness_passed": true,
+    "final_fairness_passed": true,
+    "fairness_bound": 7.0362257093246,
+    "coverage": [
+      {
+        "seed": 101,
+        "trial": 0
+      },
+      {
+        "seed": 102,
+        "trial": 0
+      },
+      {
+        "seed": 103,
+        "trial": 0
+      }
+    ]
+  },
+  "notes": [
+    "best fixed: fixed-k2-j2 (1.069 tasks/min)",
+    "B2F kept: affinity-fixed-j2 beats best fixed on dev",
+    "aging: joint-a80 (fastest within best-fixed short-task slowdown)",
+    "queue rule: continuation (measured in selected joint, never transplanted)",
+    "fixed TTL: ttl-15-a80",
+    "final system: joint (fastest within best-fixed short-task slowdown)",
+    "short cutoff: 782.5 expected output tokens (dev median)"
+  ]
+}

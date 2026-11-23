@@ -1,0 +1,70 @@
+[2026-11-17 00:35:24] session started (deadline Tue 08:30)
+[2026-11-17 00:35:27] stage probe-affinity
+[2026-11-17 00:38:03] stage probe-incremental-recompute
+[2026-11-17 01:49:20] stage probe-restore
+[2026-11-17 02:11:14] stage probe-interference
+[2026-11-17 02:43:21] stage calibrate-probes
+[2026-11-17 02:43:21] stage smoke
+[2026-11-17 02:52:19] stage collect-waits
+[2026-11-17 03:11:33] stage calibrate
+[2026-11-17 03:11:33] stage dev-manifest
+[2026-11-17 03:11:33] stage dev-runs
+[2026-11-17 03:11:33] session ended: complete
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase2/campaign.py", line 631, in <module>
+    main()
+    ~~~~^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase2/campaign.py", line 603, in main
+    campaign.run(parse_until(args.until, args.hours, dt.datetime.now()))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase2/campaign.py", line 489, in run
+    rc = self._execute(stage, minutes, until_unix)
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase2/campaign.py", line 535, in _execute
+    return self.runner(command)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/Users/air/Documents/26 Fall/CSE291A/PJ/phase2/campaign.py", line 349, in _spawn
+    log.write(f'$ {shlex.join(command)}\n')
+                   ~~~~~~~~~~^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/shlex.py", line 318, in join
+    return ' '.join(quote(arg) for arg in split_command)
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/shlex.py", line 318, in <genexpr>
+    return ' '.join(quote(arg) for arg in split_command)
+                    ~~~~~^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/shlex.py", line 327, in quote
+    if _find_unsafe(s) is None:
+       ~~~~~~~~~~~~^^^
+TypeError: expected string or bytes-like object, got 'float'
+[2026-11-17 03:13:01] session started (deadline Tue 08:30)
+[2026-11-17 03:13:03] stage dev-runs
+[2026-11-17 06:00:31] aborting current work: operator stop
+[2026-11-17 06:00:33] session ended: operator stop
+[2026-11-17 06:01:46] session started (deadline Tue 08:30)
+[2026-11-17 06:01:49] stage dev-runs
+[2026-11-17 08:11:59] session ended: deadline
+[2026-11-17 10:51:10] session started (deadline Tue 17:00)
+[2026-11-17 10:51:12] stage dev-runs
+[2026-11-17 16:43:57] session ended: deadline
+[2026-11-17 20:47:35] session started (deadline none)
+[2026-11-17 20:47:37] stage dev-runs
+[2026-11-17 23:34:13] stage probe-ram-cache
+[2026-11-17 23:48:33] stage dev-runs-ram
+[2026-11-18 00:36:55] stage dev-summary
+[2026-11-18 00:36:59] stage freeze
+[2026-11-18 00:36:59] dev is finished. Review the frozen config, then: bash scripts/phase2_night.sh approve
+[2026-11-18 00:37:00] session ended: waiting for review of manifests/frozen.json
+[2026-11-18 01:10:35] session started (deadline Wed 09:00)
+[2026-11-18 01:10:35] stage dev-manifest
+[2026-11-18 01:10:38] warm-up: unmeasured replay in campaign/warmup/20261118-011038
+[2026-11-18 01:14:31] stage dev-runs
+[2026-11-18 03:58:42] stage dev-summary
+[2026-11-18 03:58:46] stage freeze
+[2026-11-18 03:58:46] dev is finished. Review the frozen config, then: bash scripts/phase2_night.sh approve
+[2026-11-18 03:58:47] session ended: waiting for review of manifests/frozen.json
+[2026-11-18 03:59:12] session started (deadline Wed 09:00)
+[2026-11-18 03:59:12] stage eval-manifest
+[2026-11-18 03:59:14] warm-up: unmeasured replay in campaign/warmup/20261118-035914
+[2026-11-18 04:03:27] stage eval-runs
+[2026-11-18 08:39:02] session ended: deadline

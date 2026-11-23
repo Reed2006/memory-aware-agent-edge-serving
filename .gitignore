@@ -18,3 +18,14 @@ report/*.out
 report/*.fls
 report/*.fdb_latexmk
 report/*.synctex.gz
+.phase2_campaign
+runs/**/cache/
+runs/**/campaign/campaign.pid
+runs/**/campaign/STOP
+# Local compatibility links to the renamed Phase 2 result folders (absolute paths
+# inside old manifests still point here); the folders themselves live in runs/phase2/.
+runs/phase2-m4-air-16g
+runs/phase2-m4-air-16g-r2
+runs/phase2-m4-air-16g-r2-frontier
+# Stop files of the supplement drivers
+runs/phase2/*/STOP

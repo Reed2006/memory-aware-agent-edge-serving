@@ -1,0 +1,65 @@
+{
+  "config": {
+    "arrival": "scaled:1",
+    "aging_grid": "20,40,80",
+    "minutes_per_task": 1.4,
+    "speed": 1.0,
+    "checkpoint_gib": 4.0,
+    "preset": "m4",
+    "platform_id": "m4-air-16g",
+    "seeds": {
+      "waits": "100",
+      "smoke": "1",
+      "dev": "101,102,103",
+      "eval": "1001,1002,1003",
+      "sensitivity": "2001,2002"
+    }
+  },
+  "environment": {
+    "llama_server": "version: 0.7.0 (build 11669, commit 620d2225c) | built with AppleClang 17.0.0.17000604 for Darwin arm64",
+    "model_sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+    "python": "3.13.12",
+    "packages_sha256": "8f99335109280053574ca75f68218d3e6ad35f2f3d016cf0caa1bcd86ffc3032",
+    "workloads": {
+      "runs/final/workload_dev.json": "eb1f94eb47ec3ffdbecb247262f7949475c7ece290e516e0a00dd98e12ef5c14",
+      "runs/final/workload_eval.json": "f1eabdce66ec4860a70ae47ce8695117276fed5eaf3a454f3d0760d23b3a1cd5"
+    },
+    "sources": {
+      "phase1/__init__.py": "30058b69e2ba557ed242b674ddbdc259d4501d9d329363f2ed6df963f9766f8a",
+      "phase1/adapters.py": "19373f175fb9383309ed368e2a7bffa99385ef95bb41a671cefd5e3f6cbf1148",
+      "phase1/bench.py": "ea322726cf34cadcc8ee4827618fd129c794a618b373440885fe2c9eb9263313",
+      "phase1/capture.py": "6f73c6bf0c3765ab810bf9ec928bb4e04e46e7eec6b7974155042bb6aef4389d",
+      "phase1/check_restore.py": "49c5f93304e9a21e4f2f4626a9d30b44d75013f913b7e620b69a16fbb77f5f02",
+      "phase1/core.py": "0923f2c1d64a4f6c4847abf9eece63afd6e12dcc4d96fa58ac3acd2e5c34fe18",
+      "phase1/curves.py": "4a02be73a09c34beafb3f4a4ae2a8d5e11f5f31ca78c4e9e1cb0c4fa2596220d",
+      "phase1/final.py": "15d953d727e1587547da41503789a5c4839fc793f6b883c2bd6196f1028cbf59",
+      "phase1/noise.py": "0be40ef830598c395040ea2f3a512b42eace56d535efeac5b3076a6893899504",
+      "phase1/package.py": "26650b02e5af563cbd3a2c3018f028422a43446eb4d14b3c3b833dfd28ed8cca",
+      "phase1/server.py": "00c3ca7aca910e25e9df7846c790b1f4abcea1eeecb8b62f3cd3004cb094118d",
+      "phase1/startup.py": "b4124248ac25f400843b7d15b91b424c114d5e24586657d1f97fa7558036e172",
+      "phase1/summarize.py": "cc24e0358dea5138ce03e9ebc65669fc336d20d0da1955440955cdb69ffdf9b0",
+      "phase1/sweep.py": "abb935ec59bda9e5c82d77ed198208441305ad237d7863d3b29f9d13a76a4c3b",
+      "phase2/__init__.py": "b92874993262144768d9d03691ff7e2c65ec3ab280ab9aa1fd0e75d3840f000f",
+      "phase2/bench.py": "d6caa8fe15c0fbdc46632d84f08d16d0be07e49de5be103c9c08a5940eb80a66",
+      "phase2/campaign.py": "7b56f0b70e377d2d7c3912b2a0ca9bc1788994097a2373ac0ff02e49f68775cb",
+      "phase2/checkpoints.py": "318de9ed59f53f422808aabefbd70868be3eb42b6cc3edbd252565c4167c4bef",
+      "phase2/costs.py": "098f0cb5d806ba35a2c84eca04b7243ec9c0865196023b29898373c0b06cdd49",
+      "phase2/freeze.py": "d3d917dc4d5dd6d5fb17ebb3f9e784719afed82e20f85e6f682e26d8052a4384",
+      "phase2/plan.py": "b2fedc3e7599ef774cfe521024c5c270c8809fe782349c2caf9f45aedd55fe46",
+      "phase2/plot.py": "a8d89c567674b1903370afeefe81f62a44e98abe64e06e0b603e0a0f869f6f81",
+      "phase2/probes.py": "61753fac3e3cdedef4bb5d5114d48fbc5dd7a4c4456e6d8ac5900b54197f2130",
+      "phase2/scheduler.py": "e1da3704f38bb95b003599ed3e7a21bc87cfdd58dc005842250088c627249d9e",
+      "phase2/server.py": "12ac0ce8b12cb1ad93bb2170018cc1aca0b0e66d51636e259936746fb6e98c15",
+      "phase2/state.py": "91fd98cd89e98a178b6105b05571933bbb719f3d50b08c9c7e99ceb9af36f625",
+      "phase2/summarize.py": "9e500559fc3f796a9b7445e26dc37aed1c85ae0c8c0ab15d38bc3c77d0bd33f6",
+      "scripts/phase2.sh": "57b774d1a9afcf30438b5c3ddf07e3b6b6700d833ac29e45fd2a3aca098c21cf",
+      "scripts/phase2_night.sh": "62f9f62f53b9634634cd9e981b549f64ab58c8d7b1cbc53b9650169b919b48aa",
+      "requirements-lock.txt": "792ec7f5932b3e334a39438a3f9071ac133c3e1537973a5b92c6c997e935cc3c"
+    }
+  },
+  "created": "2026-11-17T00:35:23.880340",
+  "git": {
+    "head": "f58fb5a0235d94ec609d70e5a5ea1e8c4554bfeb",
+    "dirty": true
+  }
+}

@@ -1,0 +1,307 @@
+{
+  "time": "2026-11-18T13:55:57.719167",
+  "stages": [
+    "calibrate",
+    "calibrate-probes",
+    "collect-waits",
+    "probe-affinity",
+    "probe-incremental-recompute",
+    "probe-interference",
+    "probe-ram-cache",
+    "probe-restore"
+  ],
+  "policies": [
+    "fifo",
+    "fixed",
+    "affinity",
+    "affinity-fixed",
+    "ram-cache"
+  ],
+  "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g",
+  "profile_sha256": "e906b2cbc91803abc1070be3842ed761ef621bba0938f5c020e1c5752217be6e",
+  "runs": [
+    {
+      "label": "fixed-k1-j1",
+      "policy": "fixed",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "f89a9f09233c45c9fdc5ffdbe23932704a0e32424805494ef9a56a4ed50c0764",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k1-j1/S101-T0",
+      "target": "dev/dev/main/fixed-k1-j1/S101-T0"
+    },
+    {
+      "label": "fixed-k1-jinf",
+      "policy": "fixed",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "64f02c488d40d099f3c4676712392a34da1ad53c4f9b797bc81dfdf808cf19c6",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k1-jinf/S101-T0",
+      "target": "dev/dev/main/fixed-k1-jinf/S101-T0"
+    },
+    {
+      "label": "fixed-k2-j2",
+      "policy": "fixed",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "f4348eb5536d21f11b5e74cbab104e6b34b6051f73235b393c9b0781305d2e1c",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j2/S101-T0",
+      "target": "dev/dev/main/fixed-k2-j2/S101-T0"
+    },
+    {
+      "label": "fixed-k2-j3",
+      "policy": "fixed",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "8df38ae38cd0cd0420cef7c3acc492425bf21d6712893c509b576298f8518eca",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j3/S101-T0",
+      "target": "dev/dev/main/fixed-k2-j3/S101-T0"
+    },
+    {
+      "label": "fixed-k2-j4",
+      "policy": "fixed",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "05f2467ee14e505b9a94209973edbdeb7caaa8845fdb26386997e3a87846fbb1",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j4/S101-T0",
+      "target": "dev/dev/main/fixed-k2-j4/S101-T0"
+    },
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fifo/S101-T0",
+      "target": "dev/dev/main/fifo/S101-T0"
+    },
+    {
+      "label": "affinity",
+      "policy": "affinity",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "4521cb836cf7bacf3e75f92fa278da7483d2c02f8a876b8d7d8157222fedf8af",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity/S101-T0",
+      "target": "dev/dev/main/affinity/S101-T0"
+    },
+    {
+      "label": "affinity-fixed-j2",
+      "policy": "affinity-fixed",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity-fixed-j2/S101-T0",
+      "target": "dev/dev/main/affinity-fixed-j2/S101-T0"
+    },
+    {
+      "label": "affinity-fixed-j3",
+      "policy": "affinity-fixed",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "8376ef42c8634c5f7be32e4bd108689389a06a6abd1d04783ffc93449ce042d5",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity-fixed-j3/S101-T0",
+      "target": "dev/dev/main/affinity-fixed-j3/S101-T0"
+    },
+    {
+      "label": "ram-cache",
+      "policy": "ram-cache",
+      "seed": 101,
+      "trial": 0,
+      "param_hash": "32f7767bedf60fbdecdedd94d5ae8215678a3d0dc5ce6fe1b01479e8ab9e9e2c",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/ram-cache/S101-T0",
+      "target": "dev/dev/main/ram-cache/S101-T0"
+    },
+    {
+      "label": "fixed-k1-jinf",
+      "policy": "fixed",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "64f02c488d40d099f3c4676712392a34da1ad53c4f9b797bc81dfdf808cf19c6",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k1-jinf/S102-T0",
+      "target": "dev/dev/main/fixed-k1-jinf/S102-T0"
+    },
+    {
+      "label": "fixed-k2-j2",
+      "policy": "fixed",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "f4348eb5536d21f11b5e74cbab104e6b34b6051f73235b393c9b0781305d2e1c",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j2/S102-T0",
+      "target": "dev/dev/main/fixed-k2-j2/S102-T0"
+    },
+    {
+      "label": "fixed-k2-j3",
+      "policy": "fixed",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "8df38ae38cd0cd0420cef7c3acc492425bf21d6712893c509b576298f8518eca",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j3/S102-T0",
+      "target": "dev/dev/main/fixed-k2-j3/S102-T0"
+    },
+    {
+      "label": "fixed-k2-j4",
+      "policy": "fixed",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "05f2467ee14e505b9a94209973edbdeb7caaa8845fdb26386997e3a87846fbb1",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j4/S102-T0",
+      "target": "dev/dev/main/fixed-k2-j4/S102-T0"
+    },
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fifo/S102-T0",
+      "target": "dev/dev/main/fifo/S102-T0"
+    },
+    {
+      "label": "affinity",
+      "policy": "affinity",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "4521cb836cf7bacf3e75f92fa278da7483d2c02f8a876b8d7d8157222fedf8af",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity/S102-T0",
+      "target": "dev/dev/main/affinity/S102-T0"
+    },
+    {
+      "label": "affinity-fixed-j2",
+      "policy": "affinity-fixed",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity-fixed-j2/S102-T0",
+      "target": "dev/dev/main/affinity-fixed-j2/S102-T0"
+    },
+    {
+      "label": "affinity-fixed-j3",
+      "policy": "affinity-fixed",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "8376ef42c8634c5f7be32e4bd108689389a06a6abd1d04783ffc93449ce042d5",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity-fixed-j3/S102-T0",
+      "target": "dev/dev/main/affinity-fixed-j3/S102-T0"
+    },
+    {
+      "label": "ram-cache",
+      "policy": "ram-cache",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "32f7767bedf60fbdecdedd94d5ae8215678a3d0dc5ce6fe1b01479e8ab9e9e2c",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/ram-cache/S102-T0",
+      "target": "dev/dev/main/ram-cache/S102-T0"
+    },
+    {
+      "label": "fixed-k1-j1",
+      "policy": "fixed",
+      "seed": 102,
+      "trial": 0,
+      "param_hash": "f89a9f09233c45c9fdc5ffdbe23932704a0e32424805494ef9a56a4ed50c0764",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k1-j1/S102-T0",
+      "target": "dev/dev/main/fixed-k1-j1/S102-T0"
+    },
+    {
+      "label": "fixed-k2-j2",
+      "policy": "fixed",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "f4348eb5536d21f11b5e74cbab104e6b34b6051f73235b393c9b0781305d2e1c",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j2/S103-T0",
+      "target": "dev/dev/main/fixed-k2-j2/S103-T0"
+    },
+    {
+      "label": "fixed-k2-j3",
+      "policy": "fixed",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "8df38ae38cd0cd0420cef7c3acc492425bf21d6712893c509b576298f8518eca",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j3/S103-T0",
+      "target": "dev/dev/main/fixed-k2-j3/S103-T0"
+    },
+    {
+      "label": "fixed-k2-j4",
+      "policy": "fixed",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "05f2467ee14e505b9a94209973edbdeb7caaa8845fdb26386997e3a87846fbb1",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k2-j4/S103-T0",
+      "target": "dev/dev/main/fixed-k2-j4/S103-T0"
+    },
+    {
+      "label": "fifo",
+      "policy": "fifo",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "42eadd78d3bca622a2b6d1faa339dd8f96bb77f7ada6f9eda662f83f1c87d5ff",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fifo/S103-T0",
+      "target": "dev/dev/main/fifo/S103-T0"
+    },
+    {
+      "label": "affinity",
+      "policy": "affinity",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "4521cb836cf7bacf3e75f92fa278da7483d2c02f8a876b8d7d8157222fedf8af",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity/S103-T0",
+      "target": "dev/dev/main/affinity/S103-T0"
+    },
+    {
+      "label": "affinity-fixed-j2",
+      "policy": "affinity-fixed",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "654f202a9b62f663f7e32556d611c842104dd2077ed74576834432a80ff8ee22",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity-fixed-j2/S103-T0",
+      "target": "dev/dev/main/affinity-fixed-j2/S103-T0"
+    },
+    {
+      "label": "affinity-fixed-j3",
+      "policy": "affinity-fixed",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "8376ef42c8634c5f7be32e4bd108689389a06a6abd1d04783ffc93449ce042d5",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/affinity-fixed-j3/S103-T0",
+      "target": "dev/dev/main/affinity-fixed-j3/S103-T0"
+    },
+    {
+      "label": "ram-cache",
+      "policy": "ram-cache",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "32f7767bedf60fbdecdedd94d5ae8215678a3d0dc5ce6fe1b01479e8ab9e9e2c",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/ram-cache/S103-T0",
+      "target": "dev/dev/main/ram-cache/S103-T0"
+    },
+    {
+      "label": "fixed-k1-j1",
+      "policy": "fixed",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "f89a9f09233c45c9fdc5ffdbe23932704a0e32424805494ef9a56a4ed50c0764",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k1-j1/S103-T0",
+      "target": "dev/dev/main/fixed-k1-j1/S103-T0"
+    },
+    {
+      "label": "fixed-k1-jinf",
+      "policy": "fixed",
+      "seed": 103,
+      "trial": 0,
+      "param_hash": "64f02c488d40d099f3c4676712392a34da1ad53c4f9b797bc81dfdf808cf19c6",
+      "source": "/Users/air/Documents/26 Fall/CSE291A/PJ/runs/phase2-m4-air-16g/dev/dev/main/fixed-k1-jinf/S103-T0",
+      "target": "dev/dev/main/fixed-k1-jinf/S103-T0"
+    }
+  ],
+  "code_changes": [
+    "code changed: phase2/campaign.py",
+    "code changed: phase2/checkpoints.py",
+    "code changed: phase2/costs.py",
+    "code changed: phase2/freeze.py",
+    "code changed: phase2/plan.py",
+    "code changed: phase2/plot.py",
+    "code changed: phase2/probes.py",
+    "code changed: phase2/scheduler.py",
+    "code changed: phase2/state.py",
+    "code changed: phase2/summarize.py",
+    "code changed: scripts/phase2_night.sh"
+  ]
+}
