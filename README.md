@@ -21,14 +21,15 @@ The frozen Phase 1 code and results remain available below.
 | `scripts/phase2/` | Stage-numbered drivers: `2_campaign`, `3_frontier_*`, `4_rate_mix_*` |
 | `runs/phase2/` | `1_m4_pilot`, `2_m4_campaign`, `3_m4_frontier`, `4_m4_rate_mix` |
 
-**Status (2026-11-22).**
-- The M4 campaign (dev 57, eval 43, sensitivity 16 runs) and the frontier supplement are
-  complete.
-- The arrival-rate / mix supplement is running.
+**Status (2026-11-24).**
+- The M4 campaign (dev 57, eval 43, sensitivity 16 runs), the frontier supplement (9 runs)
+  and the arrival-rate / mix supplement (48 runs) are complete.
 - The pre-registered final policy `joint` beats FIFO but ties the re-tuned simple
   baselines.
 - Checkpointed sharing trades a small efficiency cost for much lower tail slowdown under
   contention.
+- The benefit of scheduling follows queueing: FIFO ties the best policy at half rate on
+  light seeds, and is 2.8–6.4× slower at double rate or with a long-heavy job mix.
 
 See `docs/phase2/4_FAIRNESS_EFFICIENCY.md`.
 

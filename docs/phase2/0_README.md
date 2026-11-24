@@ -3,10 +3,11 @@
 CSE 291A Option 1, Phase 2: memory-aware scheduling for agent serving on a 2-slot
 llama.cpp server. This page maps every Phase 2 file. Read the docs in number order.
 
-**Status (2026-11-22).**
+**Status (2026-11-24).**
 - **Main M4 campaign:** complete.
 - **Frontier supplement:** complete.
-- **Arrival-rate / workload-mix supplement:** running on the M4.
+- **Arrival-rate / workload-mix supplement:** complete (48 runs); all five predictions
+  hold.
 - **Second-platform (T4) campaign:** not started.
 - What is left, and who does it: [7_TODO.md](7_TODO.md).
 
@@ -40,6 +41,13 @@ assignment through `id_slot`. Its levers are:
     (B2F);
   - B2F keeps the lower absolute tail delay;
   - sharing without checkpoints is dominated.
+- **The benefit of scheduling follows queueing.** Across arrival rates and job mixes
+  (pre-registered, 48 runs):
+  - at half rate or with a short-heavy mix on light seeds, FIFO ties the best policy
+    (fifo / B2F JCT 0.95–1.11);
+  - at double rate or with a long-heavy mix it is 2.8–6.4× slower;
+  - the jc vs B2F trade-off reappears at double rate;
+  - `joint`'s deficit vs B2F grows with load.
 
 Details: [4_FAIRNESS_EFFICIENCY.md](4_FAIRNESS_EFFICIENCY.md).
 
@@ -85,8 +93,8 @@ before running.
 | 3 | `scripts/phase2/3_frontier_seeds.py` | A priori load screen that picked the frontier seeds |
 | 3 | `scripts/phase2/3_frontier_run.sh` | Frontier supplement driver |
 | 3 | `scripts/phase2/3_frontier_check.py` | Prints the frontier tables and the P1–P5 verdicts |
-| 4 | `scripts/phase2/4_rate_mix_run.sh` | Arrival-rate / mix supplement driver (`--until HH:MM`; `touch runs/phase2/4_m4_rate_mix/STOP` to stop) |
-| 4 | `scripts/phase2/4_rate_mix_check.py` | Prints the rate/mix tables and the R1–R5 verdicts (works on partial results) |
+| 4 | `scripts/phase2/4_rate_mix_run.sh` | Arrival-rate / mix supplement driver (`--until HH:MM`; `touch runs/phase2/4_m4_rate_mix/STOP` to stop; finished runs are skipped) |
+| 4 | `scripts/phase2/4_rate_mix_check.py` | Prints the rate/mix tables and the R1–R5 verdicts |
 
 ## Results (`runs/phase2/`)
 
@@ -95,7 +103,7 @@ before running.
 | `1_m4_pilot/` | Pilot, superseded by revision 2; exploratory evidence only. `invalid/` holds retired runs, each with a README | `dev/summary/REPORT.md`, `campaign/` |
 | `2_m4_campaign/` | Main campaign (revision 2): probes, profiles, waits, dev 57, eval 43, sensitivity 16 | `eval/summary/REPORT.md`, `sensitivity/summary/REPORT.md`, `dev/summary/`, `manifests/frozen.json`, `campaign/lock.json` |
 | `3_m4_frontier/` | Frontier supplement: 9 runs on seeds 3116, 3129, 3120 | `eval/summary/REPORT.md`, `frontier.log` |
-| `4_m4_rate_mix/` | Arrival-rate / mix supplement: 48 runs on seeds 1101–1103 (in progress) | `manifests/`, `workloads/`, `sensitivity/summary/` once finished, `rate_mix.log` |
+| `4_m4_rate_mix/` | Arrival-rate / mix supplement: 48 runs on seeds 1101–1103 | `sensitivity/summary/REPORT.md`, `sensitivity/figures/`, `manifests/`, `workloads/`, `rate_mix.log` |
 
 **Inside each run folder** (e.g. `2_m4_campaign/eval/eval/main/<policy>/S<seed>-T<trial>/raw/`):
 - `macro_runs.jsonl`: one terminal record per run;

@@ -167,3 +167,17 @@ These are descriptive, with no direction predicted:
 | Prediction check | `scripts/phase2/4_rate_mix_check.py` |
 | Results | `runs/phase2/4_m4_rate_mix/sensitivity/<condition>/<policy>/S<seed>-T0` |
 | Summary | `runs/phase2/4_m4_rate_mix/sensitivity/summary/` |
+
+## Outcome (added 2026-11-24, after all 48 runs)
+
+Everything above this section is unchanged from the registered version.
+
+- **Completion:** all 48 runs finished with 0 failed jobs, in three sessions (11-22 night,
+  11-24 night, 11-24 daytime), about 24.7 h in total.
+- **Verdicts:** R1 3/3, R2 2/3, R3 2/3, R4 3/3, R5 3/3. All five hold.
+- **Deviations:** one run (mix-short / jc / S1101) ended on battery after the Mac was
+  unplugged. One run (mix-short / B2F / S1102) started while Spotlight was indexing.
+  Neither changes a verdict.
+
+Results, deviations and the reading are in
+[4_FAIRNESS_EFFICIENCY.md](4_FAIRNESS_EFFICIENCY.md), section 6.

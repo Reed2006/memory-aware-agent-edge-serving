@@ -1,7 +1,7 @@
 # Phase 2 TODO and handoff
 
-Written 2026-11-22. The final report is due **2026-12-10**. The file map is
-[0_README.md](0_README.md); results so far are in
+Written 2026-11-22; updated 2026-11-24. The final report is due **2026-12-10**. The file
+map is [0_README.md](0_README.md); results so far are in
 [4_FAIRNESS_EFFICIENCY.md](4_FAIRNESS_EFFICIENCY.md).
 
 ## Where things stand
@@ -10,7 +10,7 @@ Written 2026-11-22. The final report is due **2026-12-10**. The file map is
 | --- | --- |
 | M4 main campaign (probes, dev, freeze, eval, sensitivity) | Done: 116 runs, 0 failed jobs |
 | M4 frontier supplement (3 new heavy seeds) | Done: 9 runs |
-| M4 arrival-rate / mix supplement (48 runs) | Running since 2026-11-22 20:34; about 24–25 h in total |
+| M4 arrival-rate / mix supplement | Done: 48 runs, 0 failed jobs; R1–R5 all hold |
 | Second platform (T4) | Not started |
 | Final report | Not started |
 
@@ -33,10 +33,11 @@ So the same frozen rules should make different decisions there.
 
 ### A.1 Set up
 
-1. Clone the `phase2` branch:
+1. Clone the repository. Phase 2 is merged into `main`; the `phase2` branch points to the
+   same commit.
 
    ```bash
-   git clone -b phase2 https://github.com/Reed2006/memory-aware-agent-edge-serving.git
+   git clone https://github.com/Reed2006/memory-aware-agent-edge-serving.git
    ```
 
 2. Create the Python environment: Python 3.13, then
@@ -106,8 +107,8 @@ These make the T4 results directly comparable with the M4 supplements.
 **Before running either one:**
 - The drivers `3_frontier_run.sh` and `4_rate_mix_run.sh` are M4-specific: the platform id,
   `R=runs/phase2/2_m4_campaign`, and the `pmset` battery check. Copy them to new
-  `scripts/phase2/5_t4_*` scripts and adapt them. **Do not edit the M4 copies**:
-  `4_rate_mix_run.sh` may still be running on the M4.
+  `scripts/phase2/5_t4_*` scripts and adapt them. **Do not edit the M4 copies**: they are
+  the record of how the M4 results were produced.
 - If freeze on the T4 does not keep `affinity-fixed-best` (on the T4 the best fixed J was 4
   in Phase 1), use `best-fixed` in its place.
 - Write a short pre-registration, like `5_` / `6_`, before the first run.
@@ -133,18 +134,8 @@ The lock pins `phase1/*.py`, `phase2/*.py`, `scripts/phase2.sh`, `scripts/phase2
 
 ## B. What this Mac still lacks
 
-1. **Finish the rate/mix supplement.**
-   - Tonight it runs to 09:00. Heavy conditions go first: arrival-double, then mix-long,
-     then mix-short, then arrival-half.
-   - It needs about 1–2 more nights. Restart it with:
-
-     ```bash
-     nohup caffeinate -is bash scripts/phase2/4_rate_mix_run.sh --until 09:00 >/dev/null 2>&1 &
-     ```
-
-     Finished runs are skipped.
-   - When all 48 are done, run `scripts/phase2/4_rate_mix_check.py` and add the results to
-     `4_FAIRNESS_EFFICIENCY.md`.
+1. ~~Finish the rate/mix supplement.~~ Done 2026-11-24: 48/48 runs, results in
+   `4_FAIRNESS_EFFICIENCY.md` section 6.
 2. **Repeat the key frontier cells.** Run trial 1 of `joint-checkpoint` and B2F on seeds
    3116, 3129 and 3120: 6 runs, about 2 h. The efficiency price of jc (+4.8% JCT, CI
    [0.97, 1.10]) is inside the ~10% trial noise; a repeat gives it a variance estimate.
@@ -153,7 +144,10 @@ The lock pins `phase1/*.py`, `phase2/*.py`, `scripts/phase2.sh`, `scripts/phase2
 4. **Optional: a small live Retail correctness check** (plan section 9.3). It is not
    implemented. If it is skipped, the report states the limit: replay with fixed output
    lengths and token-digest agreement cannot show live semantic quality.
-5. **Merge `phase2` into `main`** once the collaborator has checked out the branch.
+5. ~~Merge `phase2` into `main`.~~ Done 2026-11-22 (fast-forward).
+6. **Optional: a check of the mix-long lead.** In mix-long, jc was 13% slower than B2F
+   (pooled) with no consistent fairness gain. This was not predicted. A trial-1 repeat of
+   jc and B2F on mix-long (6 runs, about 3 h) would show whether it survives trial noise.
 
 ## C. Expected conclusions
 
@@ -170,15 +164,19 @@ The lock pins `phase1/*.py`, `phase2/*.py`, `scripts/phase2.sh`, `scripts/phase2
    has the smaller slowdown. Jain's index is fragile to the slowdown reference, because a
    cold shared prefix costs about 30 s.
 
-### C.2 What the rate/mix supplement should show (pre-registered R1–R5)
+### C.2 What the rate/mix supplement shows (pre-registered R1–R5, all hold)
 
-- **R1, low load:** at half rate the efficient policies tie, and the gain over fifo
-  shrinks. This is the "little benefit" case the course asks for.
-- **R2, overload:** at double rate the gain over fifo grows.
-- **R3, the trade-off under heavy rates:** at double rate jc has a lower P95 slowdown than
-  B2F, and no lower JCT.
-- **R4, the negative result holds:** joint's JCT is above B2F's at double rate.
-- **R5, a long-heavy mix acts like more load.**
+- **R1, low load (3/3):** at half rate the efficient policies tie (within 5%), and the gain
+  over fifo shrinks. This is the "little benefit" case the course asks for.
+- **R2, overload (2/3):** at double rate the gain over fifo grows. It does not on S1101,
+  where FIFO is already saturated at 1×.
+- **R3, the trade-off under heavy rates (2/3):** at double rate jc has a 34–58% lower P95
+  slowdown than B2F. Its JCT is higher on two seeds and lower on the third.
+- **R4, the negative result holds (3/3):** joint / B2F JCT is 1.28 at double rate, against
+  1.11 at 1×.
+- **R5, a long-heavy mix acts like more load (3/3).**
+- **Not predicted:** in the long-heavy mix jc is 13% slower than B2F with no consistent
+  fairness gain (B.6).
 
 ### C.3 What the T4 should show (hypotheses written before any T4 data)
 
@@ -247,7 +245,7 @@ supplement cell, and about 10% trial noise for the sharing policies.
 ## E. Final report checklist (due 12-10)
 
 - [ ] Question, design, setup and limits from `1_PLAN.md`; results from
-  `4_FAIRNESS_EFFICIENCY.md` plus the rate/mix and T4 results.
+  `4_FAIRNESS_EFFICIENCY.md` (rate/mix in section 6) plus the T4 results.
 - [ ] Main table: eval confirmatory paired ratios, M4 and T4.
 - [ ] Fairness section: slowdown and contention delay; Jain only with its δ = 30 check.
 - [ ] Boundaries: arrival rate, mix and tool waits, including the low-benefit cases.
